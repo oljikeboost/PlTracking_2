@@ -27,7 +27,9 @@ from tracking_utils.utils import mkdir_if_missing
 from opts import opts
 
 
-from .utils import write_results, write_results_custom, write_results_score, get_valid_seq, post_process_cls, get_hist, eval_seq
+from .utils import write_results, write_results_custom, \
+                write_results_score, get_valid_seq,\
+                post_process_cls, get_hist, eval_seq, predict_km, write_video
 
 def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_dir=None, frame_rate=30):
 
@@ -57,7 +59,6 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_
                 online_tlwhs = []
                 online_ids = []
                 online_hists = []
-                #online_scores = []
                 for t in online_targets:
                     tlwh = t.tlwh
                     tid = t.track_id
@@ -85,49 +86,17 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_
         frame_id += 1
         if i > limit: break
 
-    try:
-        concat_hists = np.concatenate([x for x in all_hists if len(x)>0])
-    except:
-        print("PROBLEMA with ", result_filename)
-        return
 
-    km = KMeans(n_clusters=2, init="k-means++", max_iter=1000).fit(concat_hists)
-    en = 0
-    for i in range(len(all_hists)):
-        if len(all_hists[i])==0: continue
-        for j in range(len(all_hists[i])):
-            all_hists[i][j] = km.labels_[en]
-            en += 1
-
+    ### Predict the team labels
+    all_hists = predict_km(all_hists)
     all_hists = post_process_cls(all_hists, results)
 
-    dataloader.re_init()
-    valid = 0
-    frame_id = 0
+    ### Write to video
+    write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0)
 
-    h, w, _ = img0.shape
-    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'MP4V'), 60, (w, h))
-
-    for i, (path, img, img0) in enumerate(tqdm(dataloader)):
-        if valid >= len(results): break
-        curr_data = ocr_data['results'][str(i)]
-
-        # if curr_data['score_bug_present'] and curr_data['game_clock_running']:
-        if curr_data['score_bug_present']:
-
-            if i in valid_frames:
-                _, online_tlwhs, online_ids, = results[valid]
-                cls = all_hists[valid]
-                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes = cls, frame_id=frame_id - 1,
-                                         fps=1. / timer.average_time)
-                valid += 1
-
-        out.write(img0)
-        frame_id += 1
-
-    out.release()
-
+    ### Write results to a File
     write_results_custom(result_filename, results, all_hists)
+
     return frame_id, timer.average_time, timer.calls
 
 

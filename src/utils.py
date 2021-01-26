@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import _init_paths
 import os
+from tqdm import tqdm
 import os.path as osp
 import json
 import cv2
@@ -13,6 +14,7 @@ from sklearn.cluster import KMeans
 
 import datasets.dataset.jde as datasets
 from tracker.multitracker import JDETracker
+from tracking_utils.timer import Timer
 from tracking_utils import visualization as vis
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer
@@ -20,6 +22,53 @@ from tracking_utils.timer import Timer
 
 from tracking_utils.utils import mkdir_if_missing
 from opts import opts
+
+def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0):
+
+    dataloader.re_init()
+    valid = 0
+    frame_id = 0
+
+    ### Write to video
+    h, w, _ = img0.shape
+    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'MP4V'), 60, (w, h))
+
+    for i, (path, img, img0) in enumerate(tqdm(dataloader)):
+        if valid >= len(results): break
+        curr_data = ocr_data['results'][str(i)]
+
+        # if curr_data['score_bug_present'] and curr_data['game_clock_running']:
+        if curr_data['score_bug_present']:
+
+            if i in valid_frames:
+                _, online_tlwhs, online_ids, = results[valid]
+                cls = all_hists[valid]
+                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, frame_id=frame_id - 1,
+                                              fps=1. / timer.average_time)
+                valid += 1
+
+        out.write(img0)
+        frame_id += 1
+
+    out.release()
+
+def predict_km(all_hists):
+
+    try:
+        concat_hists = np.concatenate([x for x in all_hists if len(x)>0])
+    except:
+        print("A problem with concatination!")
+        return
+
+    km = KMeans(n_clusters=2, init="k-means++", max_iter=1000).fit(concat_hists)
+    en = 0
+    for i in range(len(all_hists)):
+        if len(all_hists[i])==0: continue
+        for j in range(len(all_hists[i])):
+            all_hists[i][j] = km.labels_[en]
+            en += 1
+
+    return all_hists
 
 
 
