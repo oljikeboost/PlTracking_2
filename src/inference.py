@@ -26,8 +26,10 @@ def demo(opt):
     logger.info('Starting tracking...')
 
     if os.path.isdir(opt.input_video):
+
         all_vids = glob.glob(opt.input_video + '/*.mp4')
     else:
+        opt.ocr = os.path.dirname(opt.ocr)
         all_vids = [opt.input_video]
 
 
@@ -44,8 +46,8 @@ def demo(opt):
             ocr_data = json.load(ocr_data)
 
         output_video_path = osp.join(result_root, basename + '.mp4')
-        eval_seq_ocr(ocr_data, opt, dataloader, 'mot', result_filename, output_video=output_video_path,
-                     save_dir=None, show_image=False, frame_rate=frame_rate)
+        eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
+                     save_dir=None, frame_rate=frame_rate)
 
 
 if __name__ == '__main__':

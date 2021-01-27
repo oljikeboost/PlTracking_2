@@ -31,9 +31,12 @@ class MotLoss(torch.nn.Module):
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
         self.classifier = nn.Linear(self.emb_dim, self.nID)
+
         if opt.color_weight > 0:
             self.color_classifier = nn.Linear(self.emb_dim, 82)
             self.s_color = nn.Parameter(-1.05 * torch.ones(1))
+
+
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
         #self.TriLoss = TripletLoss()
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
@@ -83,6 +86,7 @@ class MotLoss(torch.nn.Module):
         loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
         if opt.color_weight > 0:
             loss += torch.exp(-self.s_color) * color_loss + self.s_color
+
         loss *= 0.5
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}

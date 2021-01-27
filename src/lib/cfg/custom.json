@@ -1,1 +1,1 @@
-{"root": "/home/ubuntu/oljike/PlayerTracking/data", "train": {"custom": "./data/custom.train", "test_emb": "./data/custom.train", "test": "./data/custom.train"}}
+{"root": "/home/ubuntu/oljike/PlayerTracking/data", "train": {"custom": "./data/custom.train"}, "test": {"custom": "./data/custom.val"}, "test_emb": "./data/custom.val"}
