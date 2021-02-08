@@ -6,6 +6,7 @@ import torch.jit
 import torch.nn as nn
 import numpy as np
 import cv2
+import mmcv
 from PIL import Image
 
 class JerseyModel(torch.nn.Module):
@@ -108,8 +109,7 @@ class JerseyModel(torch.nn.Module):
 
     def restore(self, path_to_checkpoint_file):
         self.load_state_dict(torch.load(path_to_checkpoint_file))
-        step = int(path_to_checkpoint_file.split('/')[-1][6:-4])
-        return step
+        # step = int(path_to_checkpoint_file.split('/')[-1][6:-4])
 
 
 class JerseyDetector():
@@ -121,7 +121,7 @@ class JerseyDetector():
         self.det_model = init_detector(config_file, checkpoint_file, device='cuda:0')
 
         self.class_model = JerseyModel(7)
-        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/SVHNClassifier-PyTorch/work_dirs/basic_randaug/model-14000.pth')
+        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/SVHNClassifier-PyTorch/work_dirs/basic_randaug_fulldata/model-best.pth')
         self.class_model.cuda()
 
         self.offset = 2
@@ -144,7 +144,6 @@ class JerseyDetector():
 
             length_logits, digit1_logits, digit2_logits = self.class_model.eval()(images)
 
-            length_prediction = length_logits.max(1)[1]
             digit1_prediction = digit1_logits.max(1)[1]
             digit2_prediction = digit2_logits.max(1)[1]
 
@@ -162,7 +161,8 @@ class JerseyDetector():
 
             img = inp_data[idx]
             max_res = max(result[0], key=lambda x: x[-1])
-            if max_res[-1] < 0.1:
+            max_prob = max_res[-1]
+            if max_prob < 0.5:
                 output.append(None)
                 continue
 
@@ -183,6 +183,9 @@ class JerseyDetector():
             jersey_res = int(''.join([str(x) for x in jersey_res if x != 10]))
             output.append(jersey_res)
 
-            # cv2.imwrite('crop_{}_{}.jpg'.format(idx, jersey_res), inp_data[idx])
+            # vis_img = inp_data[idx].copy()
+            # vis_img = mmcv.imshow_bboxes(vis_img, np.array([max_res]), show=False)
+            # vis_img = cv2.putText(vis_img, str(max_prob), (max_res[0], max_res[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
+            # cv2.imwrite('crops/crop_{}_{}.jpg'.format(idx, jersey_res), vis_img)
 
         return output

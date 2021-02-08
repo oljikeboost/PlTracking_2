@@ -45,7 +45,7 @@ def demo(opt):
 
         output_video_path = osp.join(result_root, basename + '.mp4')
         eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
-                     save_dir=None, frame_rate=frame_rate)
+                     frame_rate=frame_rate)
 
 
 if __name__ == '__main__':

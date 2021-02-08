@@ -199,11 +199,20 @@ def post_process_cls(all_hists, results):
     for track_id, cls_lst in id_to_cls_list.items():
         cls_lst = np.array(cls_lst).flatten().tolist()
         cnt = Counter(cls_lst)
-        mst_cmn = cnt.most_common()[0][0]
-        if mst_cmn is None:
-            id_to_cls_val[track_id] = 'None'
+        mst_cmn = cnt.most_common()#[0][0]
+        cmn_1st = mst_cmn[0][0]
+
+        if cmn_1st is None:
+            if len(mst_cmn)>1:
+                cmn_2nd = mst_cmn[1]
+                if cmn_2nd[1]>10:
+                    id_to_cls_val[track_id] = int(cmn_2nd[0])
+                else:
+                    id_to_cls_val[track_id] = 'None'
+            else:
+                id_to_cls_val[track_id] = 'None'
         else:
-            id_to_cls_val[track_id] = int(mst_cmn)
+            id_to_cls_val[track_id] = int(cmn_1st)
 
     output = []
     for en, (frame_id, tlwhs, track_ids) in enumerate(results):

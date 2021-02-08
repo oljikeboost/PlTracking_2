@@ -15,7 +15,7 @@ from gen_utils import write_results, write_results_custom, \
                 write_results_score, get_valid_seq,\
                 post_process_cls, get_hist, eval_seq, predict_km, write_video
 
-def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_dir=None, frame_rate=30):
+def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
 
     tracker = JDETracker(opt)
     timer = Timer()
@@ -25,8 +25,14 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_
     limit = float('inf')
     new_seq = False
     all_hists = []
-    all_jerseys = []
-    write_jersey = False
+
+    write_jersey = True
+    if write_jersey:
+        all_jerseys = []
+    else:
+        all_jerseys = None
+
+
     valid_frames = set()
     for i, (path, img, img0) in enumerate(dataloader):
         curr_data = ocr_data['results'][str(i)]
@@ -49,9 +55,8 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_
                 for t in online_targets:
                     tlwh = t.tlwh
                     tid = t.track_id
-                    if hasattr(t, 'curr_jersey'):
-                        t_jersey = t.curr_jersey
-                        write_jersey = True
+                    if write_jersey:
+                        t_jersey = t.jersey_list[-1]
 
                     vertical = tlwh[2] / tlwh[3] > 1.6
                     if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
@@ -92,6 +97,7 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, save_
     ### Post process for jersey numbers
     if write_jersey:
         all_jerseys = post_process_cls(all_jerseys, results)
+        # pass
     else:
         all_jerseys = None
 
