@@ -162,7 +162,7 @@ class JerseyDetector():
             img = inp_data[idx]
             max_res = max(result[0], key=lambda x: x[-1])
             max_prob = max_res[-1]
-            if max_prob < 0.5:
+            if max_prob < 0.6:
                 output.append(None)
                 continue
 
@@ -180,7 +180,7 @@ class JerseyDetector():
                 continue
 
             jersey_res = self.classify_jersey(jersey_crop)
-            jersey_res = int(''.join([str(x) for x in jersey_res if x != 10]))
+            jersey_res = ''.join([str(x) for x in jersey_res if x != 10])
             output.append(jersey_res)
 
             # vis_img = inp_data[idx].copy()

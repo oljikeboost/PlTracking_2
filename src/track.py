@@ -22,7 +22,7 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame
     results = []
     frame_id = 0
 
-    limit = float('inf')
+    limit = 800 #float('inf')
     new_seq = False
     all_hists = []
 

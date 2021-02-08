@@ -23,6 +23,16 @@ from tracking_utils.timer import Timer
 from tracking_utils.utils import mkdir_if_missing
 from opts import opts
 
+ALLOWED = [list(range(0,6)), list(range(10, 16)),
+     list(range(20, 26)),list(range(30, 36)),
+     list(range(40, 46)),list(range(50, 56)),]
+
+ALLOWED = list(np.array(ALLOWED).flatten())
+ALLOWED = [str(x) for x in ALLOWED]
+ALLOWED.append('00')
+ALLOWED = set(ALLOWED)
+
+
 def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None):
 
     timer = Timer()
@@ -180,7 +190,7 @@ def get_valid_seq(tracker, new_seq, frame_rate, curr_data, ocr_data, i, opt):
 
     return tracker, new_seq
 
-def post_process_cls(all_hists, results):
+def post_process_cls(all_hists, results, jersey_proc=False):
 
     ### First, we need to get the set of all the tracks
     ### After which, to find its corrsponding classes
@@ -205,14 +215,17 @@ def post_process_cls(all_hists, results):
         if cmn_1st is None:
             if len(mst_cmn)>1:
                 cmn_2nd = mst_cmn[1]
-                if cmn_2nd[1]>10:
-                    id_to_cls_val[track_id] = int(cmn_2nd[0])
+                if cmn_2nd[1]>10 and str(cmn_2nd[0]) in ALLOWED:
+                    id_to_cls_val[track_id] = str(cmn_2nd[0])
                 else:
                     id_to_cls_val[track_id] = 'None'
             else:
                 id_to_cls_val[track_id] = 'None'
         else:
-            id_to_cls_val[track_id] = int(cmn_1st)
+            if jersey_proc and str(cmn_1st) not in ALLOWED:
+                id_to_cls_val[track_id] = 'None'
+            else:
+                id_to_cls_val[track_id] = str(cmn_1st)
 
     output = []
     for en, (frame_id, tlwhs, track_ids) in enumerate(results):

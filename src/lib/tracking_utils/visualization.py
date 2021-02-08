@@ -11,9 +11,9 @@ def tlwhs_to_tlbrs(tlwhs):
     return tlbrs
 
 def get_color_team(cls):
-    if cls==0:
+    if cls=='0.0':
         return (255,0,0)
-    else:
+    elif cls=='1.0':
         return (0,255,0)
 
 
