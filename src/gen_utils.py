@@ -23,8 +23,9 @@ from tracking_utils.timer import Timer
 from tracking_utils.utils import mkdir_if_missing
 from opts import opts
 
-def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0):
+def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None):
 
+    timer = Timer()
     dataloader.re_init()
     valid = 0
     frame_id = 0
@@ -43,8 +44,10 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
             if i in valid_frames:
                 _, online_tlwhs, online_ids, = results[valid]
                 cls = all_hists[valid]
-                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, frame_id=frame_id - 1,
-                                              fps=1. / timer.average_time)
+                if all_jerseys:
+                    jersey = all_jerseys[valid]
+                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, jersey=jersey, frame_id=frame_id - 1,
+                                              fps=60)
                 valid += 1
 
         out.write(img0)
@@ -69,7 +72,6 @@ def predict_km(all_hists):
             en += 1
 
     return all_hists
-
 
 
 def write_results(filename, results, data_type):
@@ -120,7 +122,6 @@ def write_results_custom(filename, results, classes_list):
     logger.info('save results to {}'.format(filename))
 
 
-
 def write_results_score(filename, results, data_type):
     if data_type == 'mot':
         save_format = '{frame},{id},{x1},{y1},{w},{h},{s},1,-1,-1,-1\n'
@@ -141,7 +142,6 @@ def write_results_score(filename, results, data_type):
                 line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h, s=score)
                 f.write(line)
     logger.info('save results to {}'.format(filename))
-
 
 
 def get_valid_seq(tracker, new_seq, frame_rate, curr_data, ocr_data, i, opt):
@@ -200,7 +200,10 @@ def post_process_cls(all_hists, results):
         cls_lst = np.array(cls_lst).flatten().tolist()
         cnt = Counter(cls_lst)
         mst_cmn = cnt.most_common()[0][0]
-        id_to_cls_val[track_id] = int(mst_cmn)
+        if mst_cmn is None:
+            id_to_cls_val[track_id] = 'None'
+        else:
+            id_to_cls_val[track_id] = int(mst_cmn)
 
     output = []
     for en, (frame_id, tlwhs, track_ids) in enumerate(results):

@@ -60,7 +60,7 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=N
     return im
 
 
-def plot_tracking_team(image, tlwhs, obj_ids, classes=None, frame_id=0, fps=0., ids2=None):
+def plot_tracking_team(image, tlwhs, obj_ids, classes=None, jersey=None, frame_id=0, fps=0., ids2=None):
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
 
@@ -84,8 +84,16 @@ def plot_tracking_team(image, tlwhs, obj_ids, classes=None, frame_id=0, fps=0., 
         _line_thickness = 1 if obj_id <= 0 else line_thickness
         color = get_color_team(classes[i])
         cv2.rectangle(im, intbox[0:2], intbox[2:4], color=color, thickness=line_thickness)
-        cv2.putText(im, id_text, (intbox[0], intbox[1] + 30), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
+
+        if jersey:
+            jersey_id = str(jersey[i])
+            cv2.putText(im, jersey_id, (intbox[0], intbox[1] + 30), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
+        else:
+            cv2.putText(im, id_text, (intbox[0], intbox[1] + 30), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
+                    thickness=text_thickness)
+
+
     return im
 
 

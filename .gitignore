@@ -5,3 +5,5 @@ models/
 *jpg
 *pyc
 exp/mot
+*.out
+demos/*

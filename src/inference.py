@@ -15,8 +15,6 @@ from tracking_utils.utils import mkdir_if_missing
 from tracking_utils.log import logger
 import datasets.dataset.jde as datasets
 from track import eval_seq_ocr
-
-
 logger.setLevel(logging.INFO)
 
 def demo(opt):
@@ -37,8 +35,8 @@ def demo(opt):
         dataloader = datasets.LoadVideo(input_video, opt.img_size)
         basename = os.path.basename(input_video.split('.')[0])
         result_filename = os.path.join(result_root, basename + '.json')
-        if os.path.exists(result_filename):
-            continue
+        # if os.path.exists(result_filename):
+        #     continue
 
         frame_rate = dataloader.frame_rate
         if opt.ocr is not None:
