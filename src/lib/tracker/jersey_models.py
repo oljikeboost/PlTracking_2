@@ -115,7 +115,7 @@ class JerseyModel(torch.nn.Module):
 class JerseyDetector():
     def __init__(self,):
         config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey.py'
-        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320/epoch_80.pth'
+        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData/epoch_150.pth'
 
         # build the model from a config file and a checkpoint file
         self.det_model = init_detector(config_file, checkpoint_file, device='cuda:0')
@@ -160,13 +160,26 @@ class JerseyDetector():
                 continue
 
             img = inp_data[idx]
+
+            ### In this part we choose the most appropriate detection
+            ### The new plan will be to cut all detecitons by some high threshold
+            ### And from the remaining ones, choose the one which has the highest 'centerness'.
+            ### it is based on assumption that is two good detection overalp each other,
+            ### the most centered detection in the right one.
+            '''
+            remain_inds = result[0][:, 4] > 0.6
+            good_results = result[0][remain_inds]
+            
+            '''
+
+
             max_res = max(result[0], key=lambda x: x[-1])
             max_prob = max_res[-1]
             if max_prob < 0.6:
                 output.append(None)
                 continue
-
             max_res = max_res.astype(np.int)
+
 
             jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
                           max_res[0] - self.offset: max_res[2] + self.offset, :]

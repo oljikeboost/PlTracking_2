@@ -190,6 +190,39 @@ def get_valid_seq(tracker, new_seq, frame_rate, curr_data, ocr_data, i, opt):
 
     return tracker, new_seq
 
+
+def post_process_ocr(data, thresh=5):
+
+    i = 0
+    j = 0
+    gaps = []
+    new_gap = False
+    for en in tqdm(range(len(data['results']))):
+        if data['results'][str(en)]['score_bug_present'] and data['results'][str(en)]['game_clock_running'] and new_gap:
+            gaps.append((j - i, (i, j)))
+            new_gap = False
+            j += 1
+            i = j
+
+        elif data['results'][str(en)]['score_bug_present'] and data['results'][str(en)][
+            'game_clock_running'] and not new_gap:
+            j += 1
+            i = j
+
+        else:
+            j += 1
+            new_gap = True
+
+    for gap in gaps:
+        if gap[0] <= thresh:
+            for idx in range(gap[1][0], gap[1][1]):
+                data['results'][str(idx)]['score_bug_present'] = True
+                data['results'][str(idx)]['game_clock_running'] = True
+
+
+    return data
+
+
 def post_process_cls(all_hists, results, jersey_proc=False):
 
     ### First, we need to get the set of all the tracks
@@ -215,7 +248,7 @@ def post_process_cls(all_hists, results, jersey_proc=False):
         if cmn_1st is None:
             if len(mst_cmn)>1:
                 cmn_2nd = mst_cmn[1]
-                if cmn_2nd[1]>10 and str(cmn_2nd[0]) in ALLOWED:
+                if cmn_2nd[1]>20 and str(cmn_2nd[0]) in ALLOWED:
                     id_to_cls_val[track_id] = str(cmn_2nd[0])
                 else:
                     id_to_cls_val[track_id] = 'None'
