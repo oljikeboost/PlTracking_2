@@ -33,6 +33,74 @@ ALLOWED.append('00')
 ALLOWED = set(ALLOWED)
 
 
+def operator_accuracy(events_data, target_num, results, all_jersey, target_frame=None, global_num=None):
+    player_location = events_data['assist_location']
+
+
+    min_dist = float('inf')
+    best_jersey = None
+    best_location = None
+    for curr_res, jersey_list in zip(results, all_jersey):
+        frame_id, tlwhs, track_ids = curr_res
+        if frame_id != target_num:
+            continue
+
+        frame_res = []
+        for tlwh, track_id, jersey in zip(tlwhs, track_ids, jersey_list):
+            if track_id < 0:
+                continue
+            x1, y1, w, h = tlwh
+            x2, y2 = x1 + w, y1 + h
+
+            bottom_left = np.array((x1, y2))
+            bottom_right = np.array((x2, y2))
+            bottom_center = np.array(((x1+x2)/2, y2))
+            player_location = np.array(player_location)
+            # d = np.linalg.norm(np.cross(bottom_right - bottom_left, bottom_left - player_location)) / np.linalg.norm(bottom_right - bottom_left)
+            d = np.linalg.norm(bottom_center - player_location)
+
+            if d < (x2 - x1) / 2 and d < min_dist:
+                min_dist = d
+                best_jersey = jersey
+                best_location = tlwh
+
+            # if target_frame is not None:
+            #     target_frame = cv2.putText(target_frame, str(int(d)) + '_' + str(jersey), (int((x1+x2)/2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX,
+            #                                1, (255, 0, 0), 1)
+
+
+
+    tgt_jersey = events_data['assist_jersey']
+
+    crct = False
+    if best_jersey is not None and best_jersey==str(tgt_jersey):
+        crct = True
+
+    if target_frame is not None:
+        if crct:
+            clr = (0,255,0)
+            txt = 'Match'
+            x1, y1, w, h = best_location
+            target_frame = cv2.circle(target_frame, (int((x1 + w / 2)), int(y1 + h)), 1, clr, 10, -1)
+            target_frame = cv2.putText(target_frame, 'pred_' + best_jersey, (int((x1 + w / 2)) + 15, int(y1 + h)),
+                                       cv2.FONT_HERSHEY_SIMPLEX, 1, clr, 1)
+        else:
+            clr = (0, 0, 255)
+            txt = 'Unmatch'
+
+        target_frame = cv2.putText(target_frame, txt, (30,50),
+                                   cv2.FONT_HERSHEY_SIMPLEX, 3, clr, 2)
+
+
+        target_frame = cv2.circle(target_frame, (int(player_location[0]), int(player_location[1])), 1, (255, 0, 0), 10, -1)
+        target_frame = cv2.putText(target_frame, 'target_' + str(events_data['assist_jersey']), (int(player_location[0] + 15), int(player_location[1])), cv2.FONT_HERSHEY_SIMPLEX,
+                                   1, (255, 0, 0), 1)
+        cv2.imwrite('dist_results_new/dist_frame_{}_{}.jpg'.format(global_num, crct), target_frame)
+
+    return crct
+
+
+
 def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None):
 
     timer = Timer()
@@ -42,7 +110,7 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
 
     ### Write to video
     h, w, _ = img0.shape
-    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'MP4V'), 60, (w, h))
+    out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'MP4V'), dataloader.frame_rate, (w, h))
 
     for i, (path, img, img0) in enumerate(tqdm(dataloader)):
         if valid >= len(results): break
@@ -57,7 +125,7 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
                 if all_jerseys:
                     jersey = all_jerseys[valid]
                 img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, jersey=jersey, frame_id=frame_id - 1,
-                                              fps=60)
+                                              fps=dataloader.frame_rate)
                 valid += 1
 
         out.write(img0)
@@ -132,6 +200,31 @@ def write_results_custom(filename, results, classes_list):
     logger.info('save results to {}'.format(filename))
 
 
+def write_results_jersey(filename, results, classes_list, jersey_list):
+
+    save_format = '{id},{x1},{y1},{w},{h},{cls},{jersey}'
+
+    save_json = {}
+
+    # with open(filename, 'w') as f:
+    for curr_res, classes, curr_jerseys in zip(results, classes_list, jersey_list):
+        frame_id, tlwhs, track_ids = curr_res
+        frame_res = []
+        for tlwh, track_id, cls, jersey in zip(tlwhs, track_ids, classes, curr_jerseys):
+            if track_id < 0:
+                continue
+            x1, y1, w, h = tlwh
+            x2, y2 = x1 + w, y1 + h
+            line = save_format.format(id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h, cls=cls, jersey=jersey)
+            frame_res.append(line)
+
+        save_json[frame_id] = frame_res
+
+    with open(filename, 'w') as f:
+        json.dump(save_json, f)
+
+    logger.info('save results to {}'.format(filename))
+
 def write_results_score(filename, results, data_type):
     if data_type == 'mot':
         save_format = '{frame},{id},{x1},{y1},{w},{h},{s},1,-1,-1,-1\n'
@@ -192,7 +285,7 @@ def get_valid_seq(tracker, new_seq, frame_rate, curr_data, ocr_data, i, opt):
 
 
 def post_process_ocr(data, thresh=5):
-
+    print("Post processing of ocr missing intervals ...")
     i = 0
     j = 0
     gaps = []

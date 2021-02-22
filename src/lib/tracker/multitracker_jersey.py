@@ -73,7 +73,7 @@ class STrack(BaseTrack):
                 stracks[i].mean = mean
                 stracks[i].covariance = cov
 
-    def activate(self, kalman_filter, frame_id, jersey_num=None, ):
+    def activate(self, kalman_filter, frame_id, jersey_num=None):
         """Start a new tracklet"""
         self.kalman_filter = kalman_filter
         self.track_id = self.next_id()
@@ -200,7 +200,9 @@ class JDETracker(object):
             track_buffer_size=90,
             emb_assign=0.4,
             iou_assign=0.7,
-            unconf_assign=0.7):
+            unconf_assign=0.7,
+            jersey_detector=None,
+            model=None):
 
         opt.conf_thres = 0.41
 
@@ -211,10 +213,14 @@ class JDETracker(object):
         else:
             opt.device = torch.device('cpu')
         print('Creating model...')
-        self.model = create_model(opt.arch, opt.heads, opt.head_conv, False)
-        self.model = load_model(self.model, opt.load_model)
-        self.model = self.model.to(opt.device)
-        self.model.eval()
+
+        if model is None:
+            self.model = create_model(opt.arch, opt.heads, opt.head_conv, False)
+            self.model = load_model(self.model, opt.load_model)
+            self.model = self.model.to(opt.device)
+            self.model.eval()
+        else:
+            self.model = model
 
         self.tracked_stracks = []  # type: list[STrack]
         self.lost_stracks = []  # type: list[STrack]
@@ -238,7 +244,10 @@ class JDETracker(object):
         STrack.re_init_ids()
         STrack.features = []
 
-        self.jersey_detector = JerseyDetector()
+        if jersey_detector is None:
+            self.jersey_detector = JerseyDetector()
+        else:
+            self.jersey_detector = jersey_detector
 
     def re_init(self, opt, frame_rate):
 
@@ -333,7 +342,7 @@ class JDETracker(object):
         for en, tlbr in enumerate(dets[:, :5]):
             bbox = tlbr.astype(np.int)
             crop = img0[bbox[1]:bbox[3], bbox[0]: bbox[2]]
-            if 0 not in crop.shape:
+            if 0 not in crop.shape and 1 not in crop.shape:
                 new_idx.append(en)
                 jersey_crops.append(crop)
 
@@ -341,23 +350,14 @@ class JDETracker(object):
         # id_feature = [id_feature[i] for i in new_idx]
         dets = dets[new_idx]
         id_feature = id_feature[new_idx]
-        jersey_dets = self.jersey_detector.infer(jersey_crops)
+        if len(jersey_crops)>0:
+            jersey_dets = self.jersey_detector.infer(jersey_crops)
            
         if len(dets) > 0:
             detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, j, self.track_buffer_size) for
                           (tlbrs, f, j) in zip(dets[:, :5], id_feature, jersey_dets)]
         else:
             detections = [] 
-        
-
-        ### Original
-        # if len(dets) > 0:
-        #     '''Detections'''
-        #     detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, self.track_buffer_size) for
-        #                   (tlbrs, f) in zip(dets[:, :5], id_feature)]
-        # else:
-        #     detections = []
-
 
 
         ''' Add newly detected tracklets to tracked_stracks'''
@@ -402,7 +402,6 @@ class JDETracker(object):
         ### Color distance
 
         matches, u_track, u_detection = matching.linear_assignment(dists, thresh=self.iou_assign)
-
         for itracked, idet in matches:
             track = r_tracked_stracks[itracked]
             det = detections[idet]

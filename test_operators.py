@@ -19,8 +19,6 @@ from gen_utils import post_process_ocr
 logger.setLevel(logging.INFO)
 
 def demo(opt):
-
-
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
@@ -49,6 +47,7 @@ def demo(opt):
         ocr_data = post_process_ocr(ocr_data)
 
         output_video_path = osp.join(result_root, basename + '.mp4')
+
         if jersey:
             eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
                      frame_rate=frame_rate)
