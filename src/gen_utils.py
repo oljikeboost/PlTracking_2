@@ -200,8 +200,8 @@ def write_results_custom(filename, results, classes_list):
     logger.info('save results to {}'.format(filename))
 
 
-def write_results_jersey(filename, results, classes_list, jersey_list):
-
+def write_results_jersey(filename, results, classes_list, jersey_list, img0):
+    imgh,imgw,_ = img0.shape
     save_format = '{id},{x1},{y1},{w},{h},{cls},{jersey}'
 
     save_json = {}
@@ -215,7 +215,8 @@ def write_results_jersey(filename, results, classes_list, jersey_list):
                 continue
             x1, y1, w, h = tlwh
             x2, y2 = x1 + w, y1 + h
-            line = save_format.format(id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h, cls=cls, jersey=jersey)
+
+            line = save_format.format(id=track_id, x1=x1/imgw, y1=y1/imgh, x2=x2/imgw, y2=y2/imgh, w=w, h=h, cls=cls, jersey=jersey)
             frame_res.append(line)
 
         save_json[frame_id] = frame_res

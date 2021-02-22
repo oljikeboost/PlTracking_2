@@ -158,7 +158,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     write_video(dataloader, results, output_video,
                 valid_frames, all_hists, ocr_data, img0, all_jerseys)
     ### Write results to a File
-    write_results_jersey(result_filename, results, all_hists, all_jerseys)
+    write_results_jersey(result_filename, results, all_hists, all_jerseys, img0)
 
     return frame_id, timer.average_time, timer.calls
 
