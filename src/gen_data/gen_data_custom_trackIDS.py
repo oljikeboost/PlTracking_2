@@ -29,7 +29,7 @@ for seq in seqs:
     seq_label_root = osp.join(label_root, seq, 'img1')
     mkdirs(seq_label_root)
 
-    for fid, tid, x, y, w, h, mark, label, team_color in gt:
+    for fid, tid, x, y, w, h, mark, label, team_color, ball in gt:
         if mark == 0 or not label == 1:
             continue
         fid = int(fid)
@@ -41,7 +41,7 @@ for seq in seqs:
         y += h / 2
         label_fpath = osp.join(seq_label_root, '{:06d}.txt'.format(fid))
 
-        label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f} {:d}\n'.format(
-            tid, x / seq_width, y / seq_height, w / seq_width, h / seq_height, int(team_color))
+        label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f} {:d} {:d}\n'.format(
+            tid, x / seq_width, y / seq_height, w / seq_width, h / seq_height, int(team_color), int(ball))
         with open(label_fpath, 'a') as f:
             f.write(label_str)

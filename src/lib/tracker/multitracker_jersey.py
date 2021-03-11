@@ -296,6 +296,21 @@ class JDETracker(object):
     def update_frame(self):
         self.frame_id += 1
 
+
+    def get_jersey_crops(self, dets, img0):
+
+        jersey_crops = []
+        new_idx = []
+        for en, tlbr in enumerate(dets[:, :5]):
+            bbox = tlbr.astype(np.int)
+            crop = img0[bbox[1]:bbox[3], bbox[0]: bbox[2]]
+            shape = crop.shape
+            if 0 not in shape and 1 not in shape:
+                new_idx.append(en)
+                jersey_crops.append(crop)
+
+        return jersey_crops, new_idx
+
     def update(self, im_blob, img0):
         self.frame_id += 1
         activated_starcks = []
@@ -334,23 +349,12 @@ class JDETracker(object):
         dets = dets[remain_inds]
         id_feature = id_feature[remain_inds]
 
-        ### Here we also need to input the information about jersey number
-        ### So, probably we need to have jersey detector in this class
+        jersey_crops, new_idx = self.get_jersey_crops(dets, img0)
 
-        jersey_crops = []
-        new_idx = []
-        for en, tlbr in enumerate(dets[:, :5]):
-            bbox = tlbr.astype(np.int)
-            crop = img0[bbox[1]:bbox[3], bbox[0]: bbox[2]]
-            if 0 not in crop.shape and 1 not in crop.shape:
-                new_idx.append(en)
-                jersey_crops.append(crop)
-
-        # dets = [dets[i] for i in new_idx]
-        # id_feature = [id_feature[i] for i in new_idx]
         dets = dets[new_idx]
         id_feature = id_feature[new_idx]
-        if len(jersey_crops)>0:
+
+        if len(jersey_crops) > 0:
             jersey_dets = self.jersey_detector.infer(jersey_crops)
            
         if len(dets) > 0:
@@ -358,7 +362,6 @@ class JDETracker(object):
                           (tlbrs, f, j) in zip(dets[:, :5], id_feature, jersey_dets)]
         else:
             detections = [] 
-
 
         ''' Add newly detected tracklets to tracked_stracks'''
         unconfirmed = []
@@ -371,15 +374,8 @@ class JDETracker(object):
 
         ''' Step 2: First association, with embedding'''
         strack_pool = joint_stracks(tracked_stracks, self.lost_stracks)
-        # Predict the current location with KF
-        #for strack in strack_pool:
-            #strack.predict()
         STrack.multi_predict(strack_pool)
         dists = matching.embedding_distance(strack_pool, detections)
-
-
-        # clr_dists = matching.color_distance(img0, strack_pool, detections)
-        # dists = dists * (1- clr_dists)
 
         dists = matching.fuse_motion(self.kalman_filter, dists, strack_pool, detections)
         matches, u_track, u_detection = matching.linear_assignment(dists, thresh=self.emb_assign)
@@ -398,8 +394,6 @@ class JDETracker(object):
         detections = [detections[i] for i in u_detection]
         r_tracked_stracks = [strack_pool[i] for i in u_track if strack_pool[i].state == TrackState.Tracked]
         dists = matching.iou_distance(r_tracked_stracks, detections)
-
-        ### Color distance
 
         matches, u_track, u_detection = matching.linear_assignment(dists, thresh=self.iou_assign)
         for itracked, idet in matches:

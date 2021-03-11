@@ -97,6 +97,13 @@ def ious(atlbrs, btlbrs):
     return ious
 
 
+def transform_track(tracks):
+    for en in range(len(tracks)):
+        tracks[en].tlbr[1] = tracks[en].tlbr[1] + 0.75 * (tracks[en].tlbr[3] - tracks[en].tlbr[1])
+
+    return tracks
+
+
 def iou_distance(atracks, btracks):
     """
     Compute cost based on IoU
@@ -110,6 +117,9 @@ def iou_distance(atracks, btracks):
         atlbrs = atracks
         btlbrs = btracks
     else:
+        atracks = transform_track(atracks)
+        btracks = transform_track(btracks)
+
         atlbrs = [track.tlbr for track in atracks]
         btlbrs = [track.tlbr for track in btracks]
     _ious = ious(atlbrs, btlbrs)

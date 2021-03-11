@@ -100,10 +100,8 @@ def operator_accuracy(events_data, target_num, results, all_jersey, target_frame
     return crct
 
 
-
 def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None):
 
-    timer = Timer()
     dataloader.re_init()
     valid = 0
     frame_id = 0
@@ -132,6 +130,8 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
         frame_id += 1
 
     out.release()
+    # os.system('ffmpeg -y -i {} -vcodec libx264 -loglevel quiet {}'.format(output_video, output_video))
+
 
 def predict_km(all_hists):
 
@@ -201,11 +201,10 @@ def write_results_custom(filename, results, classes_list):
 
 
 def write_results_jersey(filename, results, classes_list, jersey_list, img0):
-    imgh,imgw,_ = img0.shape
+    imgh, imgw, _ = img0.shape
     save_format = '{id},{x1},{y1},{w},{h},{cls},{jersey}'
 
     save_json = {}
-
     # with open(filename, 'w') as f:
     for curr_res, classes, curr_jerseys in zip(results, classes_list, jersey_list):
         frame_id, tlwhs, track_ids = curr_res
@@ -225,6 +224,7 @@ def write_results_jersey(filename, results, classes_list, jersey_list, img0):
         json.dump(save_json, f)
 
     logger.info('save results to {}'.format(filename))
+
 
 def write_results_score(filename, results, data_type):
     if data_type == 'mot':
@@ -364,6 +364,7 @@ def post_process_cls(all_hists, results, jersey_proc=False):
         output.append(curr_output)
 
     return output
+
 
 def get_hist(tlwh, img0):
     x0, y0, w, h = tlwh

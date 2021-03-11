@@ -32,21 +32,28 @@ class MotLoss(torch.nn.Module):
         self.nID = opt.nID
         self.classifier = nn.Linear(self.emb_dim, self.nID)
 
-        if opt.color_weight > 0:
+        if opt.color_weight is True:
+            print(opt.color_weight)
+            print("Adding color head...")
             self.color_classifier = nn.Linear(self.emb_dim, 82)
             self.s_color = nn.Parameter(-1.05 * torch.ones(1))
 
+        if opt.ball_weight:
+            print("Adding ball head...")
+            self.ball_classifier = nn.Linear(self.emb_dim, 2)
+            self.s_ball = nn.Parameter(-0.5 * torch.ones(1))
+
 
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
-        #self.TriLoss = TripletLoss()
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
-        self.s_id = nn.Parameter(-1.05 * torch.ones(1))
+        self.s_id = nn.Parameter(-opt.id_weight * torch.ones(1))
 
     def forward(self, outputs, batch):
         opt = self.opt
         hm_loss, wh_loss, off_loss, id_loss = 0, 0, 0, 0
         color_loss = 0
+        ball_loss = 0
         for s in range(opt.num_stacks):
             output = outputs[s]
             if not opt.mse_loss:
@@ -68,11 +75,10 @@ class MotLoss(torch.nn.Module):
                 id_head = self.emb_scale * F.normalize(id_head)
                 id_target = batch['ids'][batch['reg_mask'] > 0]
 
-
                 id_output = self.classifier(id_head).contiguous()
                 id_loss += self.IDLoss(id_output, id_target)
 
-            if opt.color_weight > 0:
+            if opt.color_weight is True:
                 color_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
                 color_head = color_head[batch['reg_mask'] > 0].contiguous()
                 color_head = self.emb_scale * F.normalize(color_head)
@@ -81,11 +87,25 @@ class MotLoss(torch.nn.Module):
                 color_output = self.color_classifier(color_head).contiguous()
                 color_loss += self.IDLoss(color_output, color_target)
 
+            if opt.ball_weight:
+                ball_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
+                ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
+                ball_head = self.emb_scale * F.normalize(ball_head)
+                ball_target = batch['ball_poss'][batch['reg_mask'] > 0]
+
+                ball_output = self.ball_classifier(ball_head).contiguous()
+                ball_loss += self.IDLoss(ball_output, ball_target)
+
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
         loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
-        if opt.color_weight > 0:
+
+        if opt.color_weight is True:
             loss += torch.exp(-self.s_color) * color_loss + self.s_color
+
+        if opt.ball_weight:
+            loss += torch.exp(-self.s_ball) * ball_loss + self.s_ball
+
 
         loss *= 0.5
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,

@@ -1,6 +1,5 @@
 from mmdet.apis import init_detector, inference_detector, inference_batch_detector
 from torchvision import transforms
-from torch.utils.data import Dataset, DataLoader
 import torch
 import torch.jit
 import torch.nn as nn
@@ -119,14 +118,13 @@ class JerseyDetector():
         checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData/epoch_150.pth'
         # build the model from a config file and a checkpoint file
 
-
         self.class_model = JerseyModel(7)
         self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/SVHNClassifier-PyTorch/work_dirs/basic_randaug_fulldata/model-best.pth')
         self.class_model.eval().cuda()
-        self.ax=1
+        self.ax = 1
 
         # print("Converting to TRT...")
-        # x = torch.rand((50, 3, 54, 54)).cuda()
+        # x = torch.rand((1, 3, 54, 54)).cuda()
         # self.class_model = torch2trt(self.class_model, [x], use_onnx=True, max_batch_size=1)
         # self.ax = 2
         # print("Converted to TRT!")
@@ -168,7 +166,6 @@ class JerseyDetector():
             digit2_prediction = digit2_logits.max(2)[1]
 
         return [digit1_prediction.tolist(), digit2_prediction.tolist()]
-
 
     def infer_batch(self, inp_data):
 
@@ -226,16 +223,13 @@ class JerseyDetector():
         output = []
 
         all_results = inference_batch_detector(self.det_model, inp_data)
-        lost_ids = []
         for idx, result in enumerate(all_results):
 
             if len(result[0]) == 0:
                 output.append(None)
-                lost_ids.append(idx)
                 continue
 
             img = inp_data[idx]
-
             ### In this part we choose the most appropriate detection
             ### The new plan will be to cut all detecitons by some high threshold
             ### And from the remaining ones, choose the one which has the highest 'centerness'.
@@ -243,19 +237,16 @@ class JerseyDetector():
             ### the most centered detection in the right one.
             '''
             remain_inds = result[0][:, 4] > 0.6
-            good_results = result[0][remain_inds]
-            
+            good_results = result[0][remain_inds]        
             '''
 
             max_res = max(result[0], key=lambda x: x[-1])
             max_prob = max_res[-1]
             if max_prob < 0.6:
                 output.append(None)
-                lost_ids.append(idx)
                 continue
+
             max_res = max_res.astype(np.int)
-
-
             jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
                           max_res[0] - self.offset: max_res[2] + self.offset, :]
 
@@ -265,7 +256,6 @@ class JerseyDetector():
 
             if 0 in jersey_crop.shape:
                 output.append(None)
-                lost_ids.append(idx)
                 continue
 
             jersey_res = self.classify_jersey(jersey_crop)
@@ -276,7 +266,5 @@ class JerseyDetector():
             # vis_img = mmcv.imshow_bboxes(vis_img, np.array([max_res]), show=False)
             # vis_img = cv2.putText(vis_img, str(max_prob), (max_res[0], max_res[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (255,0,0))
             # cv2.imwrite('crops/crop_{}_{}.jpg'.format(idx, jersey_res), vis_img)
-
-
 
         return output

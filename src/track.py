@@ -106,7 +106,6 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
         if curr_data['score_bug_present']:# and curr_data['game_clock_running']:
 
             valid_frames.add(i)
-            # run tracking
             timer.tic()
             blob = torch.from_numpy(img).cuda().unsqueeze(0)
             online_targets = tracker.update(blob, img0)
@@ -128,7 +127,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
                     hist = get_hist(tlwh, img0)
                     online_hists.append(hist)
 
-            if len(online_hists)==0 :
+            if len(online_hists) == 0:
                 all_hists.append(np.zeros((0,0)))
             else:
                 all_hists.append(np.array(online_hists))
@@ -157,6 +156,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     ### Write to video
     write_video(dataloader, results, output_video,
                 valid_frames, all_hists, ocr_data, img0, all_jerseys)
+
     ### Write results to a File
     write_results_jersey(result_filename, results, all_hists, all_jerseys, img0)
 

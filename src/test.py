@@ -17,7 +17,7 @@ from tracking_utils.utils import mkdir_if_missing
 from opts import opts
 
 
-from .gen_utils import eval_seq
+from gen_utils import eval_seq
 
 def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
          save_images=False, save_videos=False, show_image=True):
@@ -83,10 +83,10 @@ if __name__ == '__main__':
                     2020.02.22-Michigan_at_Purdue,
                     2020.02.25-NorthCarolinaState_at_NorthCarolina,
                     2020.02.20-Oregon_at_ArizonaState,
-                    2020.02.15-NotreDame_at_Duke
+                    2020.02.15-NotreDame_at_Duke,
+                    UCLA vs Washington 2-15-20
                     '''
         data_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
-
     seqs = [seq.strip() for seq in seqs_str.split(',') if seq.strip()!='']
 
     main(opt,

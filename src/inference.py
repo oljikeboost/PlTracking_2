@@ -20,7 +20,6 @@ logger.setLevel(logging.INFO)
 
 def demo(opt):
 
-
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
