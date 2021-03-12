@@ -1,6 +1,10 @@
+*cython*
 DCNv2/
 .ipynb_checkpoints
 experiments/
 models/
 *jpg
 *pyc
+exp/mot
+demos/*
+*mp4
