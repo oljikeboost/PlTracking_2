@@ -5,12 +5,14 @@ from __future__ import print_function
 import argparse
 import os
 import sys
-
+from mmcv import Config
+from argparse import Namespace
 
 class opts(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         # basic experiment setting
+        self.parser.add_argument('--config', default=None, help='path to config file')
         self.parser.add_argument('--task', default='mot', help='mot')
         self.parser.add_argument('--dataset', default='jde', help='jde')
         self.parser.add_argument('--exp_id', default='default')
@@ -152,9 +154,9 @@ class opts(object):
                                  help='reid loss: ce | triplet')
         self.parser.add_argument('--id_weight', type=float, default=1.05,
                                  help='loss weight for id')
-        self.parser.add_argument('--color_weight', default=True,
+        self.parser.add_argument('--color_weight', default=1.05,
                                  help='loss weight for id')
-        self.parser.add_argument('--ball_weight', action='store_true',
+        self.parser.add_argument('--ball_weight', default=0.0,
                                  help='loss weight for ball')
 
         self.parser.add_argument('--reid_dim', type=int, default=128,
@@ -177,6 +179,15 @@ class opts(object):
             opt = self.parser.parse_args()
         else:
             opt = self.parser.parse_args(args)
+
+        if opt.config is not None:
+            conf = Config.fromfile(opt.config)
+            opt_dict = vars(opt)
+
+            for k, v in conf.items():
+                if k in opt_dict:
+                    opt_dict[k] = v
+            opt = Namespace(**opt_dict)
 
         opt.gpus_str = opt.gpus
         opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
