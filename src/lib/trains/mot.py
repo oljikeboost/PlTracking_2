@@ -86,7 +86,7 @@ class MotLoss(torch.nn.Module):
 
                 color_output = self.color_classifier(color_head).contiguous()
                 color_loss += self.IDLoss(color_output, color_target)
-                
+
             if opt.ball_weight > 0:
                 ball_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
                 ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
