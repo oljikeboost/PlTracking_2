@@ -32,13 +32,13 @@ class MotLoss(torch.nn.Module):
         self.nID = opt.nID
         self.classifier = nn.Linear(self.emb_dim, self.nID)
 
-        if opt.color_weight is True:
+        if opt.color_weight > 0:
             print(opt.color_weight)
             print("Adding color head...")
             self.color_classifier = nn.Linear(self.emb_dim, 82)
             self.s_color = nn.Parameter(-1.05 * torch.ones(1))
 
-        if opt.ball_weight:
+        if opt.ball_weight > 0:
             print("Adding ball head...")
             self.ball_classifier = nn.Linear(self.emb_dim, 2)
             self.s_ball = nn.Parameter(-0.5 * torch.ones(1))
@@ -78,7 +78,7 @@ class MotLoss(torch.nn.Module):
                 id_output = self.classifier(id_head).contiguous()
                 id_loss += self.IDLoss(id_output, id_target)
 
-            if opt.color_weight is True:
+            if opt.color_weight>0:
                 color_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
                 color_head = color_head[batch['reg_mask'] > 0].contiguous()
                 color_head = self.emb_scale * F.normalize(color_head)
@@ -87,7 +87,7 @@ class MotLoss(torch.nn.Module):
                 color_output = self.color_classifier(color_head).contiguous()
                 color_loss += self.IDLoss(color_output, color_target)
 
-            if opt.ball_weight:
+            if opt.ball_weight > 0:
                 ball_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
                 ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
                 ball_head = self.emb_scale * F.normalize(ball_head)
@@ -100,10 +100,10 @@ class MotLoss(torch.nn.Module):
 
         loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
 
-        if opt.color_weight is True:
+        if opt.color_weight>0:
             loss += torch.exp(-self.s_color) * color_loss + self.s_color
 
-        if opt.ball_weight:
+        if opt.ball_weight > 0:
             loss += torch.exp(-self.s_ball) * ball_loss + self.s_ball
 
 
