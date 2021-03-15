@@ -78,7 +78,7 @@ class MotLoss(torch.nn.Module):
                 id_output = self.classifier(id_head).contiguous()
                 id_loss += self.IDLoss(id_output, id_target)
 
-            if opt.color_weight>0:
+            if opt.color_weight > 0:
                 color_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
                 color_head = color_head[batch['reg_mask'] > 0].contiguous()
                 color_head = self.emb_scale * F.normalize(color_head)
