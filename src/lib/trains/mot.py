@@ -31,19 +31,30 @@ class MotLoss(torch.nn.Module):
         self.emb_dim = opt.reid_dim
         self.nID = opt.nID
         self.classifier = nn.Linear(self.emb_dim, self.nID)
+
         if opt.color_weight > 0:
+            print(opt.color_weight)
+            print("Adding color head...")
             self.color_classifier = nn.Linear(self.emb_dim, 82)
             self.s_color = nn.Parameter(-1.05 * torch.ones(1))
+
+        if opt.ball_weight > 0:
+            print("Adding ball head...")
+            self.ball_classifier = nn.Linear(self.emb_dim, 2)
+            self.s_ball = nn.Parameter(-0.5 * torch.ones(1))
+
+
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
-        #self.TriLoss = TripletLoss()
+
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
-        self.s_id = nn.Parameter(-1.05 * torch.ones(1))
+        self.s_id = nn.Parameter(-opt.id_weight * torch.ones(1))
 
     def forward(self, outputs, batch):
         opt = self.opt
         hm_loss, wh_loss, off_loss, id_loss = 0, 0, 0, 0
         color_loss = 0
+        ball_loss = 0
         for s in range(opt.num_stacks):
             output = outputs[s]
             if not opt.mse_loss:
@@ -81,8 +92,14 @@ class MotLoss(torch.nn.Module):
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
         loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
-        if opt.color_weight > 0:
+
+        if opt.color_weight>0:
             loss += torch.exp(-self.s_color) * color_loss + self.s_color
+
+        if opt.ball_weight > 0:
+            loss += torch.exp(-self.s_ball) * ball_loss + self.s_ball
+
+
         loss *= 0.5
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}
