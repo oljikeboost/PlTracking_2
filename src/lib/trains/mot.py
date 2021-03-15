@@ -45,7 +45,6 @@ class MotLoss(torch.nn.Module):
 
 
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
-
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
         self.s_id = nn.Parameter(-opt.id_weight * torch.ones(1))
@@ -76,7 +75,6 @@ class MotLoss(torch.nn.Module):
                 id_head = self.emb_scale * F.normalize(id_head)
                 id_target = batch['ids'][batch['reg_mask'] > 0]
 
-
                 id_output = self.classifier(id_head).contiguous()
                 id_loss += self.IDLoss(id_output, id_target)
 
@@ -88,6 +86,15 @@ class MotLoss(torch.nn.Module):
 
                 color_output = self.color_classifier(color_head).contiguous()
                 color_loss += self.IDLoss(color_output, color_target)
+                
+            if opt.ball_weight > 0:
+                ball_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
+                ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
+                ball_head = self.emb_scale * F.normalize(ball_head)
+                ball_target = batch['ball_poss'][batch['reg_mask'] > 0]
+
+                ball_output = self.ball_classifier(ball_head).contiguous()
+                ball_loss += self.IDLoss(ball_output, ball_target)
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
