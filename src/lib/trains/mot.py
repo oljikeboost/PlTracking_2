@@ -47,7 +47,7 @@ class MotLoss(torch.nn.Module):
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
         self.s_det = nn.Parameter(-1.85 * torch.ones(1))
-        self.s_id = nn.Parameter(-opt.id_weight * torch.ones(1))
+        self.s_id = nn.Parameter(-1.05 * torch.ones(1))
 
     def forward(self, outputs, batch):
         opt = self.opt
