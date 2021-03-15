@@ -5,13 +5,15 @@ from __future__ import print_function
 import argparse
 import os
 import sys
-
+from mmcv import Config
+from argparse import Namespace
 
 class opts(object):
     def __init__(self):
         self.parser = argparse.ArgumentParser()
         # basic experiment setting
-        self.parser.add_argument('task', default='mot', help='mot')
+        self.parser.add_argument('--config', default=None, help='path to config file')
+        self.parser.add_argument('--task', default='mot', help='mot')
         self.parser.add_argument('--dataset', default='jde', help='jde')
         self.parser.add_argument('--exp_id', default='default')
         self.parser.add_argument('--test', action='store_true')
@@ -90,6 +92,7 @@ class opts(object):
                                  help='include validation in training and '
                                       'test on test set')
 
+
         # test
         self.parser.add_argument('--K', type=int, default=248,
                                  help='max number of output objects.')
@@ -149,10 +152,12 @@ class opts(object):
                                  help='loss weight for bounding box size.')
         self.parser.add_argument('--id_loss', default='ce',
                                  help='reid loss: ce | triplet')
-        self.parser.add_argument('--id_weight', type=float, default=1,
+        self.parser.add_argument('--id_weight', type=float, default=1.05,
                                  help='loss weight for id')
-        self.parser.add_argument('--color_weight', type=float, default=0,
+        self.parser.add_argument('--color_weight', default=1.05,
                                  help='loss weight for id')
+        self.parser.add_argument('--ball_weight', default=0.0,
+                                 help='loss weight for ball')
 
         self.parser.add_argument('--reid_dim', type=int, default=128,
                                  help='feature dim for reid')
@@ -174,6 +179,15 @@ class opts(object):
             opt = self.parser.parse_args()
         else:
             opt = self.parser.parse_args(args)
+
+        if opt.config is not None:
+            conf = Config.fromfile(opt.config)
+            opt_dict = vars(opt)
+
+            for k, v in conf.items():
+                if k in opt_dict:
+                    opt_dict[k] = v
+            opt = Namespace(**opt_dict)
 
         opt.gpus_str = opt.gpus
         opt.gpus = [int(gpu) for gpu in opt.gpus.split(',')]
