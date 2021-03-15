@@ -28,7 +28,6 @@ for seq in seqs:
     mkdirs(seq_label_root)
 
     for fid, tid, x, y, w, h, mark, label, team_color in gt:
-    # for fid, tid, x, y, w, h, mark, label, team_color in gt:
         if mark == 0 or not label == 1:
             continue
         fid = int(fid)
