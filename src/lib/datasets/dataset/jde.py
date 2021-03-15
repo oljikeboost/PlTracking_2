@@ -203,6 +203,7 @@ class LoadImagesAndLabels:  # for training
             labels = np.array([])
 
         # Augment image and labels
+        # cv2.imwrite("test.jpg", cv2.rectangle(img, (labels[0, 2], labels[0, 3]), (labels[0, 4], labels[0, 5]), (0, 255, 0), 1))
         if self.augment:
             img, labels, M = random_affine(img, labels, degrees=(-5, 5), translate=(0.10, 0.10), scale=(0.50, 1.20))
 
@@ -217,6 +218,10 @@ class LoadImagesAndLabels:  # for training
             plt.axis('off')
             plt.savefig('test.jpg')
             time.sleep(10)
+
+        # for i in range(len(labels)):
+        #     cv2.imwrite("test2.jpg",
+        #             cv2.rectangle(img, (labels[i, 2], labels[i, 3]), (labels[i, 4], labels[i, 5]), (0, 255, 0), 1))
 
         nL = len(labels)
         if nL > 0:
@@ -426,6 +431,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         colors = np.zeros((self.max_objs,), dtype=np.int64)
+        # ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
@@ -470,9 +476,14 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 reg_mask[k] = 1
                 ids[k] = label[1]
                 colors[k] = label[6]
+                # ball_poss[k] = label[7]
                 bbox_xys[k] = bbox_xy
 
-        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg, 'ids': ids, 'colors': colors, 'bbox': bbox_xys}
+        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
+        #        'ids': ids, 'colors': colors, 'bbox': bbox_xys, 'ball_poss': ball_poss}
+        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
+               'ids': ids, 'colors': colors, 'bbox': bbox_xys}
+
         return ret
 
 
