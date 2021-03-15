@@ -152,7 +152,7 @@ class opts(object):
                                  help='loss weight for bounding box size.')
         self.parser.add_argument('--id_loss', default='ce',
                                  help='reid loss: ce | triplet')
-        self.parser.add_argument('--id_weight', type=float, default=1.05,
+        self.parser.add_argument('--id_weight', type=float, default=1,
                                  help='loss weight for id')
         self.parser.add_argument('--color_weight', default=1.05,
                                  help='loss weight for id')
