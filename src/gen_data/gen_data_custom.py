@@ -10,7 +10,6 @@ def mkdirs(d):
         shutil.rmtree(d)
         os.makedirs(d)
 
-
 seq_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
 label_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/labels_with_ids/train'
 mkdirs(label_root)
@@ -24,7 +23,6 @@ for seq in seqs:
 
     gt_txt = osp.join(seq_root, seq, 'gt', 'gt.txt')
     gt = np.loadtxt(gt_txt, delimiter=',')
-    # gt = np.genfromtxt(gt_txt, dtype=np.float64)
 
     seq_label_root = osp.join(label_root, seq, 'img1')
     mkdirs(seq_label_root)
@@ -43,5 +41,6 @@ for seq in seqs:
 
         label_str = '0 {:d} {:.6f} {:.6f} {:.6f} {:.6f} {:d}\n'.format(
             tid_curr, x / seq_width, y / seq_height, w / seq_width, h / seq_height, int(team_color))
+
         with open(label_fpath, 'a') as f:
             f.write(label_str)
