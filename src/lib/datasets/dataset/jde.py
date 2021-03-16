@@ -219,9 +219,9 @@ class LoadImagesAndLabels:  # for training
             plt.savefig('test.jpg')
             time.sleep(10)
 
-        for i in range(len(labels)):
-            cv2.imwrite("test2.jpg",
-                    cv2.rectangle(img, (labels[i, 2], labels[i, 3]), (labels[i, 4], labels[i, 5]), (0, 255, 0), 1))
+        # for i in range(len(labels)):
+        #     cv2.imwrite("test2.jpg",
+        #             cv2.rectangle(img, (labels[i, 2], labels[i, 3]), (labels[i, 4], labels[i, 5]), (0, 255, 0), 1))
 
         nL = len(labels)
         if nL > 0:
@@ -431,7 +431,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         colors = np.zeros((self.max_objs,), dtype=np.int64)
-        ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
+        # ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian

@@ -117,8 +117,8 @@ def iou_distance(atracks, btracks):
         atlbrs = atracks
         btlbrs = btracks
     else:
-        atracks = transform_track(atracks)
-        btracks = transform_track(btracks)
+        # atracks = transform_track(atracks)
+        # btracks = transform_track(btracks)
 
         atlbrs = [track.tlbr for track in atracks]
         btlbrs = [track.tlbr for track in btracks]
