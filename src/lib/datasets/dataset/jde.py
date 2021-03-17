@@ -191,7 +191,7 @@ class LoadImagesAndLabels:  # for training
 
         # Load labels
         if os.path.isfile(label_path):
-            labels0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 7)
+            labels0 = np.loadtxt(label_path, dtype=np.float32).reshape(-1, 8)
 
             # Normalized xywh to pixel xyxy format
             labels = labels0.copy()
@@ -431,7 +431,7 @@ class JointDataset(LoadImagesAndLabels):  # for training
         reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
         ids = np.zeros((self.max_objs, ), dtype=np.int64)
         colors = np.zeros((self.max_objs,), dtype=np.int64)
-        # ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
+        ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
         bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
 
         draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
@@ -476,13 +476,13 @@ class JointDataset(LoadImagesAndLabels):  # for training
                 reg_mask[k] = 1
                 ids[k] = label[1]
                 colors[k] = label[6]
-                # ball_poss[k] = label[7]
+                ball_poss[k] = label[7]
                 bbox_xys[k] = bbox_xy
 
-        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
-        #        'ids': ids, 'colors': colors, 'bbox': bbox_xys, 'ball_poss': ball_poss}
         ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
-               'ids': ids, 'colors': colors, 'bbox': bbox_xys}
+               'ids': ids, 'colors': colors, 'bbox': bbox_xys, 'ball_poss': ball_poss}
+        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
+        #        'ids': ids, 'colors': colors, 'bbox': bbox_xys}
 
         return ret
 

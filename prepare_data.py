@@ -36,31 +36,77 @@ if __name__=="__main__":
 
     gt_list = []
     anno_dirs = glob.glob('../data/raw_data/*')
+    jersey_dir = '../data/second_task/'
 
     _, id_to_cls_val = get_all_team_classes(id_dict)
-
     for anno_dir in tqdm(anno_dirs):
+
+        jersey_anno = os.path.join(jersey_dir, os.path.basename(anno_dir))
+
         all_jsons = sorted(glob.glob(anno_dir + '/*.json'))
 
-        gt_list = []
+        ### Iterate through all frames of current directory
         cls_en = 0
+        gt_list = []
+        curr_labels = set()
         for en, single_json in enumerate(all_jsons):
             data = json.load(open(single_json))
+
+            jersey_file = os.path.join(jersey_anno, os.path.basename(single_json).replace('frame_', ''))
+
+            if os.path.exists(jersey_file):
+                jersey_data = json.load(open(jersey_file))
+
+                ### Map each track for current frame to its existing information, such as Ball Pocession, Jersey Number, Position on Court
+                jersey_dict = {}
+                for i in range(len(jersey_data['shapes'])):
+                    bbox = jersey_data['shapes'][i]['points']
+                    label = jersey_data['shapes'][i]['label']
+
+                    lbl_split = label.split('_')
+                    if 'j' in label:
+
+                        if len(lbl_split) == 4:
+                            jersey_num = lbl_split[-1]
+                            track_id = '_'.join([lbl_split[1], lbl_split[2]])
+                        else:
+                            _, track_id, jersey_num = lbl_split
+
+                        if not track_id in jersey_dict:
+                            jersey_dict[str(track_id)] = [jersey_num, 0]
+                        else:
+                            jersey_dict[str(track_id)][0] = jersey_num
+
+                    elif 'b' in label:
+
+                        if len(lbl_split) == 3:
+                            track_id = '_'.join([lbl_split[1], lbl_split[2]])
+                        else:
+                            _, track_id = lbl_split
+
+                        if not track_id in jersey_dict:
+                            jersey_dict[track_id] = [None, 1]
+                        else:
+                            jersey_dict[track_id][1] = 1
 
             for i in range(len(data['shapes'])):
                 bbox = data['shapes'][i]['points']
                 label = data['shapes'][i]['label']
+                curr_labels.add(label)
 
                 if bbox[0][0] > bbox[1][0] or bbox[0][1] > bbox[1][1]:
                     continue
 
                 track_label = id_dict[os.path.basename(anno_dir)][label]
-                player_lbl = id_to_cls_val[track_label]
+                team_lbl = id_to_cls_val[track_label]
+
+                if os.path.exists(jersey_file):
+                    jersey_num, ball_poc = jersey_dict.get(label, [None, 0])
 
                 anno_line = [en + 1, track_label,
                              int(bbox[0][0]), int(bbox[0][1]),
                              int(bbox[1][0] - bbox[0][0]), int(bbox[1][1] - bbox[0][1]),
-                             1, 1, player_lbl]
+                             1, 1, team_lbl, ball_poc]
 
                 anno_str = ','.join([str(x) for x in anno_line])
 
