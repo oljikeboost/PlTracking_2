@@ -88,7 +88,7 @@ class MotLoss(torch.nn.Module):
                 color_loss += self.IDLoss(color_output, color_target)
 
             if opt.ball_weight > 0:
-                ball_head = _tranpose_and_gather_feat(output['id'], batch['ind'])
+                ball_head = _tranpose_and_gather_feat(output['ball'], batch['ind'])
                 ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
                 ball_head = self.emb_scale * F.normalize(ball_head)
                 ball_target = batch['ball_poss'][batch['reg_mask'] > 0]

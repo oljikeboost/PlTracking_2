@@ -480,7 +480,8 @@ class DLASeg(nn.Module):
                   nn.ReLU(inplace=True),
                   nn.Conv2d(head_conv, 1,
                     kernel_size=final_kernel, stride=1,
-                    padding=final_kernel // 2, bias=True))
+                    padding=final_kernel // 2, bias=True),
+                  nn.Sigmoid())
         fill_fc_weights(fc)
         self.__setattr__(head, fc)
 
