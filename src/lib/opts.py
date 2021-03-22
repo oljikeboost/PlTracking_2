@@ -250,6 +250,10 @@ class opts(object):
                          'id': opt.reid_dim}
             if opt.reg_offset:
                 opt.heads.update({'reg': 2})
+
+            if opt.ball_weight > 0:
+                opt.heads.update({'ball': 1})
+
             opt.nID = dataset.nID
             opt.img_size = (1088, 608)
             # opt.img_size = (864, 480)
