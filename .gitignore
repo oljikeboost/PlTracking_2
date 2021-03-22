@@ -1,8 +1,8 @@
+pretrained
 *mp4
 DCNv2/
 .ipynb_checkpoints
-experiments/
-models/
+experiments
 *jpg
 *pyc
 exp/mot
