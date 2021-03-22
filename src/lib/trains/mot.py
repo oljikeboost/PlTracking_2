@@ -40,9 +40,8 @@ class MotLoss(torch.nn.Module):
 
         if opt.ball_weight > 0:
             print("Adding ball head...")
-            self.ball_classifier = nn.Linear(self.emb_dim, 2)
             self.s_ball = nn.Parameter(-0.5 * torch.ones(1))
-
+            self.ball_loss = nn.BCELoss()
 
         self.IDLoss = nn.CrossEntropyLoss(ignore_index=-1)
         self.emb_scale = math.sqrt(2) * math.log(self.nID - 1)
@@ -90,17 +89,15 @@ class MotLoss(torch.nn.Module):
             if opt.ball_weight > 0:
                 ball_head = _tranpose_and_gather_feat(output['ball'], batch['ind'])
                 ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
-                ball_head = self.emb_scale * F.normalize(ball_head)
                 ball_target = batch['ball_poss'][batch['reg_mask'] > 0]
 
-                ball_output = self.ball_classifier(ball_head).contiguous()
-                ball_loss += self.IDLoss(ball_output, ball_target)
+                ball_loss += self.ball_loss(ball_head.squeeze(), ball_target.float())
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
         loss = torch.exp(-self.s_det) * det_loss + torch.exp(-self.s_id) * id_loss + (self.s_det + self.s_id)
 
-        if opt.color_weight>0:
+        if opt.color_weight > 0:
             loss += torch.exp(-self.s_color) * color_loss + self.s_color
 
         if opt.ball_weight > 0:
@@ -110,6 +107,12 @@ class MotLoss(torch.nn.Module):
         loss *= 0.5
         loss_stats = {'loss': loss, 'hm_loss': hm_loss,
                       'wh_loss': wh_loss, 'off_loss': off_loss, 'id_loss': id_loss}
+
+        if opt.color_weight > 0:
+            loss_stats.update({'color_loss': color_loss})
+        if opt.ball_weight > 0:
+            loss_stats.update({'ball_loss': ball_loss})
+
         return loss, loss_stats
 
 
@@ -226,6 +229,12 @@ class MotTrainer(BaseTrainer):
 
     def _get_losses(self, opt):
         loss_states = ['loss', 'hm_loss', 'wh_loss', 'off_loss', 'id_loss']
+
+        if opt.color_weight > 0:
+            loss_states.append('color_loss')
+        if opt.ball_weight > 0:
+            loss_states.append('ball_loss')
+
         if opt.angular_loss:
             loss = MotAngularLoss(opt)
         else:
