@@ -447,7 +447,7 @@ class DLASeg(nn.Module):
             classes = self.heads[head]
 
             if head == 'ball':
-                self.create_ball_head(head, self.heads['id'])
+                self.create_ball_head(head, self.heads['id'], head_conv, final_kernel)
                 continue
 
             if head_conv > 0:
@@ -473,9 +473,14 @@ class DLASeg(nn.Module):
             self.__setattr__(head, fc)
 
 
-    def create_ball_head(self, head, id_dim):
-        fc = nn.Sequential(nn.Linear(id_dim, 1),
-            nn.ReLU(inplace=True))
+    def create_ball_head(self, head, id_dim, head_conv, final_kernel):
+        fc = nn.Sequential(
+                  nn.Conv2d(id_dim, head_conv,
+                    kernel_size=3, padding=1, bias=True),
+                  nn.ReLU(inplace=True),
+                  nn.Conv2d(head_conv, 1,
+                    kernel_size=final_kernel, stride=1,
+                    padding=final_kernel // 2, bias=True))
         fill_fc_weights(fc)
         self.__setattr__(head, fc)
 
@@ -491,7 +496,13 @@ class DLASeg(nn.Module):
 
         z = {}
         for head in self.heads:
+            if head == 'ball': continue
             z[head] = self.__getattr__(head)(y[-1])
+
+        ### Here we need to wrtie logic where we use batch info to process emb head.
+        if 'ball' in self.heads:
+            z['ball'] = self.__getattr__('ball')(z['id'])
+
         return [z]
     
 

@@ -4,5 +4,5 @@ num_epochs = 30
 lr_step = '15'
 data_cfg = '../src/lib/cfg/custom.json'
 color_weight = 1.05
-ball_weight = 0.0
+ball_weight = 1.0
 num_workers = 0
