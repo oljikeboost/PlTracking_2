@@ -88,7 +88,10 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame
 
 def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
 
-    from tracker.multitracker_jersey import JDETracker
+    if opt.ball_weight > 0:
+        from tracker.multitracker_jersey_ball import JDETracker
+    else:
+        from tracker.multitracker_jersey import JDETracker
     tracker = JDETracker(opt)
     timer = Timer()
     results = []
