@@ -348,7 +348,7 @@ class JDETracker(object):
             id_feature = id_feature.cpu().numpy()
 
             ### the following code will gather info about ball possession
-            ball_feature = output['id']
+            ball_feature = output['ball']
             ball_feature = _tranpose_and_gather_feat(ball_feature, inds)
             ball_feature = ball_feature.squeeze(0)
             ball_feature = ball_feature.cpu().numpy()
@@ -366,13 +366,14 @@ class JDETracker(object):
         dets = dets[new_idx]
         id_feature = id_feature[new_idx]
         ball_feature = ball_feature[new_idx]
+        ball_feature = ball_feature > 0.5
 
         if len(jersey_crops) > 0:
             jersey_dets = self.jersey_detector.infer(jersey_crops)
            
         if len(dets) > 0:
             detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, j, self.track_buffer_size) for
-                          (tlbrs, f, j) in zip(dets[:, :5], id_feature, jersey_dets)]
+                          (tlbrs, f, j) in zip(dets[:, :5], id_feature, jersey_dets, ball_feature)]
         else:
             detections = [] 
 
@@ -397,10 +398,12 @@ class JDETracker(object):
             track = strack_pool[itracked]
             det = detections[idet]
             if track.state == TrackState.Tracked:
-                track.update(detections[idet], self.frame_id, jersey_num=detections[idet].curr_jersey)
+                track.update(detections[idet], self.frame_id,
+                             jersey_num=detections[idet].curr_jersey, ball_poss=detections[idet].ball_poss)
                 activated_starcks.append(track)
             else:
-                track.re_activate(det, self.frame_id, new_id=False, jersey_num=det.curr_jersey)
+                track.re_activate(det, self.frame_id, new_id=False,
+                                  jersey_num=det.curr_jersey, ball_poss=detections[idet].ball_poss)
                 refind_stracks.append(track)
 
         ''' Step 3: Second association, with IOU'''
@@ -413,11 +416,12 @@ class JDETracker(object):
             track = r_tracked_stracks[itracked]
             det = detections[idet]
             if track.state == TrackState.Tracked:
-                track.update(det, self.frame_id, jersey_num=det.curr_jersey)
+                track.update(det, self.frame_id,
+                             jersey_num=det.curr_jersey, ball_poss=detections[idet].ball_poss)
                 activated_starcks.append(track)
             else:
                 track.re_activate(det, self.frame_id, new_id=False,
-                                  jersey_num=det.curr_jersey)
+                                  jersey_num=det.curr_jersey, ball_poss=detections[idet].ball_poss)
                 refind_stracks.append(track)
                 
         for it in u_track:
@@ -432,7 +436,7 @@ class JDETracker(object):
         matches, u_unconfirmed, u_detection = matching.linear_assignment(dists, thresh=self.unconf_assign)
         for itracked, idet in matches:
             unconfirmed[itracked].update(detections[idet], self.frame_id,
-                                         jersey_num=detections[idet].curr_jersey)
+                                         jersey_num=detections[idet].curr_jersey, ball_poss=detections[idet].ball_poss)
             activated_starcks.append(unconfirmed[itracked])
         for it in u_unconfirmed:
             track = unconfirmed[it]
@@ -445,7 +449,7 @@ class JDETracker(object):
             if track.score < self.det_thresh:
                 continue
             track.activate(self.kalman_filter, self.frame_id,
-                           jersey_num=detections[inew].curr_jersey)
+                           jersey_num=detections[inew].curr_jersey, ball_poss=detections[idet].ball_poss)
             activated_starcks.append(track)
         """ Step 5: Update state"""
         for track in self.lost_stracks:
