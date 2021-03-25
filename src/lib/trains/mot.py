@@ -9,6 +9,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import Parameter
 import torchvision
+import cv2
+from sklearn import metrics
 
 from models.losses import FocalLoss, TripletLoss
 from models.losses import RegL1Loss, RegLoss, NormRegL1Loss, RegWeightedL1Loss
@@ -91,7 +93,7 @@ class MotLoss(torch.nn.Module):
                 ball_head = ball_head[batch['reg_mask'] > 0].contiguous()
                 ball_target = batch['ball_poss'][batch['reg_mask'] > 0]
 
-                ball_loss += self.ball_loss(ball_head.squeeze(), ball_target.float())
+                ball_loss += self.ball_loss(ball_head, ball_target.float())
 
         det_loss = opt.hm_weight * hm_loss + opt.wh_weight * wh_loss + opt.off_weight * off_loss
 
@@ -111,6 +113,8 @@ class MotLoss(torch.nn.Module):
         if opt.color_weight > 0:
             loss_stats.update({'color_loss': color_loss})
         if opt.ball_weight > 0:
+            ### We can calculate the f1 score in the following manner:
+            ### metrics.accuracy_score(ball_target.cpu(), ball_head.squeeze().cpu() > 0.5)
             loss_stats.update({'ball_loss': ball_loss})
 
         return loss, loss_stats

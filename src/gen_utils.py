@@ -396,6 +396,7 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
 
     if save_dir:
         mkdir_if_missing(save_dir)
+
     tracker = JDETracker(opt)
     timer = Timer()
     results = []
