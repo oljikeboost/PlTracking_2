@@ -38,7 +38,7 @@ if __name__=="__main__":
     anno_dirs = glob.glob('../data/raw_data/*')
     jersey_dir = '../data/second_task/'
 
-    _, id_to_cls_val = get_all_team_classes(id_dict)
+    _, id_to_cls_val = get_all_team_classes(id_dict, anno_dirs)
     for anno_dir in tqdm(anno_dirs):
 
         jersey_anno = os.path.join(jersey_dir, os.path.basename(anno_dir))
