@@ -88,10 +88,14 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame
 
 def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
 
-    if opt.ball_weight > 0:
+    if opt.ball_weight>0:
         from tracker.multitracker_jersey_ball import JDETracker
+        ball_info = True
+        all_balls = []
     else:
         from tracker.multitracker_jersey import JDETracker
+        all_balls = None
+
     tracker = JDETracker(opt)
     timer = Timer()
     results = []
@@ -100,7 +104,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     limit = float('inf')
     all_hists = []
     all_jerseys = []
-
+    t_ball = False
 
     valid_frames = set()
     for i, (path, img, img0) in enumerate(dataloader):
@@ -116,16 +120,21 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
             online_ids = []
             online_hists = []
             online_jersey = []
+            online_ball = []
             for t in online_targets:
                 tlwh = t.tlwh
                 tid = t.track_id
                 t_jersey = t.jersey_list[-1]
+
+                if ball_info:
+                    t_ball = t.ball_list[-1]
 
                 vertical = tlwh[2] / tlwh[3] > 1.6
                 if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
                     online_tlwhs.append(tlwh)
                     online_ids.append(tid)
                     online_jersey.append(t_jersey)
+                    online_ball.append(t_ball)
 
                     hist = get_hist(tlwh, img0)
                     online_hists.append(hist)
@@ -137,6 +146,9 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
 
             # save results
             all_jerseys.append(online_jersey)
+            if ball_info:
+                all_balls.append(online_ball)
+
             results.append((frame_id + 1, online_tlwhs, online_ids))
 
             timer.toc()
@@ -156,9 +168,12 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     ### Post process for jersey numbers
     all_jerseys = post_process_cls(all_jerseys, results, True)
 
+    ### Post process for ball possession
+    #TODO
+
     ### Write to video
     write_video(dataloader, results, output_video,
-                valid_frames, all_hists, ocr_data, img0, all_jerseys)
+                valid_frames, all_hists, ocr_data, img0, all_jerseys, all_balls)
 
     ### Write results to a File
     write_results_jersey(result_filename, results, all_hists, all_jerseys, img0)

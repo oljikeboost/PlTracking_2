@@ -372,8 +372,8 @@ class JDETracker(object):
             jersey_dets = self.jersey_detector.infer(jersey_crops)
            
         if len(dets) > 0:
-            detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, j, self.track_buffer_size) for
-                          (tlbrs, f, j) in zip(dets[:, :5], id_feature, jersey_dets, ball_feature)]
+            detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, j, b, self.track_buffer_size) for
+                          (tlbrs, f, j, b) in zip(dets[:, :5], id_feature, jersey_dets, ball_feature)]
         else:
             detections = [] 
 
@@ -449,7 +449,7 @@ class JDETracker(object):
             if track.score < self.det_thresh:
                 continue
             track.activate(self.kalman_filter, self.frame_id,
-                           jersey_num=detections[inew].curr_jersey, ball_poss=detections[idet].ball_poss)
+                           jersey_num=detections[inew].curr_jersey, ball_poss=detections[inew].ball_poss)
             activated_starcks.append(track)
         """ Step 5: Update state"""
         for track in self.lost_stracks:

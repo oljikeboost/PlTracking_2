@@ -100,7 +100,7 @@ def operator_accuracy(events_data, target_num, results, all_jersey, target_frame
     return crct
 
 
-def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None):
+def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_data, img0, all_jerseys=None, all_balls=None):
 
     dataloader.re_init()
     valid = 0
@@ -110,6 +110,8 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
     h, w, _ = img0.shape
     out = cv2.VideoWriter(output_video, cv2.VideoWriter_fourcc(*'MP4V'), dataloader.frame_rate, (w, h))
 
+    jersey = None
+    ball = None
     for i, (path, img, img0) in enumerate(tqdm(dataloader)):
         if valid >= len(results): break
         curr_data = ocr_data['results'][str(i)]
@@ -122,7 +124,9 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
                 cls = all_hists[valid]
                 if all_jerseys:
                     jersey = all_jerseys[valid]
-                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, jersey=jersey, frame_id=frame_id - 1,
+                if all_balls is not None:
+                    ball = all_balls[valid]
+                img0 = vis.plot_tracking_team(img0, online_tlwhs, online_ids, classes=cls, jersey=jersey, ball=ball, frame_id=frame_id - 1,
                                               fps=dataloader.frame_rate)
                 valid += 1
 

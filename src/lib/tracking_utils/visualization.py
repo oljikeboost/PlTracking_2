@@ -60,7 +60,7 @@ def plot_tracking(image, tlwhs, obj_ids, scores=None, frame_id=0, fps=0., ids2=N
     return im
 
 
-def plot_tracking_team(image, tlwhs, obj_ids, classes=None, jersey=None, frame_id=0, fps=0., ids2=None):
+def plot_tracking_team(image, tlwhs, obj_ids, classes=None, jersey=None, ball=None, frame_id=0, fps=0., ids2=None):
     im = np.ascontiguousarray(np.copy(image))
     im_h, im_w = im.shape[:2]
 
@@ -91,6 +91,12 @@ def plot_tracking_team(image, tlwhs, obj_ids, classes=None, jersey=None, frame_i
                     thickness=text_thickness)
         else:
             cv2.putText(im, id_text, (intbox[0], intbox[1] + 30), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
+                    thickness=text_thickness)
+
+
+        if ball is not None:
+            ball_poss = str(ball[i])
+            cv2.putText(im, ball_poss, (intbox[0], intbox[3]), cv2.FONT_HERSHEY_PLAIN, text_scale, (0, 0, 255),
                     thickness=text_thickness)
 
 
