@@ -116,3 +116,182 @@ def get_all_team_classes(id_dict):
 
     print('Clustering is finished!')
     return proc_cls, global_id_to_cls_val
+
+
+def create_mot_third_task(id_dict, id_to_cls_val):
+    gt_list = []
+    anno_dirs = glob.glob('../data/third_task/*')
+
+
+    for anno_dir in tqdm(anno_dirs):
+
+        all_jsons = sorted(glob.glob(anno_dir + '/*.json'))
+
+
+        ### Iterate through all frames of current directory
+        cls_en = 0
+        gt_list = []
+        curr_labels = set()
+        for en, single_json in enumerate(all_jsons):
+            data = json.load(open(single_json))
+
+
+            ### The following block of code creates the jersey_dict which maps track_id to [jersey_num, ball_possession]
+            jersey_dict = {}                      
+            for i in range(len(data['shapes'])):
+
+                label = data['shapes'][i]['label']
+                if '_' not in label: continue
+
+                lbl_split = label.split('_')
+                if 'j' in label:
+                    _, track_id, jersey_num = lbl_split
+
+                    if not track_id in jersey_dict:
+                        jersey_dict[str(track_id)] = [jersey_num, 0]
+                    else:
+                        jersey_dict[str(track_id)][0] = jersey_num
+
+                elif 'b' in label:
+
+                    _, track_id = lbl_split
+
+                    if not track_id in jersey_dict:
+                        jersey_dict[track_id] = [None, 1]
+                    else:
+                        jersey_dict[track_id][1] = 1
+
+
+            for i in range(len(data['shapes'])):
+                bbox = data['shapes'][i]['points']  
+                label = data['shapes'][i]['label']
+                if '_' in label: continue
+
+                curr_labels.add(label)
+
+                if bbox[0][0] > bbox[1][0] or bbox[0][1] > bbox[1][1]: 
+                    continue
+
+                track_label = id_dict[os.path.basename(anno_dir)][label]
+                team_lbl = id_to_cls_val[track_label]
+
+                jersey_num, ball_poc = jersey_dict.get(label, [None, 0])
+
+                anno_line = [en+1, track_label, 
+                             int(bbox[0][0]), int(bbox[0][1]), 
+                             int(bbox[1][0] - bbox[0][0]), int(bbox[1][1] - bbox[0][1]),
+                             1, 1, team_lbl, ball_poc]
+
+                anno_str = ','.join([str(x) for x in anno_line])     
+
+                gt_list.append(anno_str)
+
+
+
+        ### Create the output GT dir
+        output_dir = os.path.join('../data/mot_data/images/train/', os.path.basename(anno_dir))
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_dir = os.path.join(output_dir, 'gt')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+
+        ### Write the detection to the file gt.txt
+        with open(os.path.join(output_dir, 'gt.txt'), 'w') as f:
+            for x in gt_list:
+                f.writelines(x + '\n')       
+
+                
+def create_mot_first_second_task(id_dict, id_to_cls_val):
+    
+    gt_list = []
+    anno_dirs = glob.glob('../data/raw_data/*')
+    jersey_dir = '../data/second_task/'
+
+    for dr_en, anno_dir in enumerate(tqdm(anno_dirs)):
+
+        jersey_anno = os.path.join(jersey_dir, os.path.basename(anno_dir))
+
+        all_jsons = sorted(glob.glob(anno_dir + '/*.json'))
+
+
+        ### Iterate through all frames of current directory
+        cls_en = 0
+        gt_list = []
+        curr_labels = set()
+        for en, single_json in enumerate(all_jsons):
+            data = json.load(open(single_json))
+
+            jersey_file = os.path.join(jersey_anno, os.path.basename(single_json).replace('frame_', ''))
+
+            if os.path.exists(jersey_file):
+                jersey_data = json.load(open(jersey_file))   
+
+                ### Map each track for current frame to its existing information, such as Ball Pocession, Jersey Number, Position on Court
+                jersey_dict = {}
+                for i in range(len(jersey_data['shapes'])):
+                    bbox = jersey_data['shapes'][i]['points']  
+                    label = jersey_data['shapes'][i]['label']
+
+                    lbl_split = label.split('_')
+                    if 'j' in label:
+
+                        _, track_id, jersey_num = lbl_split
+
+
+                        if not track_id in jersey_dict:
+                            jersey_dict[str(track_id)] = [jersey_num, 0]
+                        else:
+                            jersey_dict[str(track_id)][0] = jersey_num
+
+                    elif 'b' in label:
+
+                        _, track_id = lbl_split
+
+                        if not track_id in jersey_dict:
+                            jersey_dict[track_id] = [None, 1]
+                        else:
+                            jersey_dict[track_id][1] = 1
+
+
+            for i in range(len(data['shapes'])):
+                bbox = data['shapes'][i]['points']  
+                label = data['shapes'][i]['label']
+                curr_labels.add(label)
+
+                if bbox[0][0] > bbox[1][0] or bbox[0][1] > bbox[1][1]: 
+                    continue
+
+                track_label = id_dict[os.path.basename(anno_dir)][label]
+                team_lbl = id_to_cls_val[track_label]
+
+                if os.path.exists(jersey_file):
+                    jersey_num, ball_poc = jersey_dict.get(label, [None, 0])
+
+                anno_line = [en+1, track_label, 
+                             int(bbox[0][0]), int(bbox[0][1]), 
+                             int(bbox[1][0] - bbox[0][0]), int(bbox[1][1] - bbox[0][1]),
+                             1, 1, team_lbl, ball_poc]
+
+                anno_str = ','.join([str(x) for x in anno_line])     
+
+                gt_list.append(anno_str)
+
+
+
+        ### Create the output GT dir
+        output_dir = os.path.join('../data/mot_data/images/train/', os.path.basename(anno_dir))
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        output_dir = os.path.join(output_dir, 'gt')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+
+        ### Write the detection to the file gt.txt
+        with open(os.path.join(output_dir, 'gt.txt'), 'w') as f:
+            for x in gt_list:
+                f.writelines(x + '\n')   
+
+
