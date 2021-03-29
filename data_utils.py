@@ -46,9 +46,9 @@ def post_process_cls(all_cls, all_tracks):
     return output, id_to_cls_val
 
 
-def get_all_team_classes(id_dict):
+def get_all_team_classes(id_dict, anno_dirs):
     print("Clustering all teams in progress...")
-    anno_dirs = glob.glob('../data/raw_data/*')
+
 
     ### Create global dict which maps global player track to its new global team class
     global_id_to_cls_val = {}

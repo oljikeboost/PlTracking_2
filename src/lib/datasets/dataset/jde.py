@@ -207,22 +207,6 @@ class LoadImagesAndLabels:  # for training
         if self.augment:
             img, labels, M = random_affine(img, labels, degrees=(-5, 5), translate=(0.10, 0.10), scale=(0.50, 1.20))
 
-        plotFlag = False
-        if plotFlag:
-            import matplotlib
-            matplotlib.use('Agg')
-            import matplotlib.pyplot as plt
-            plt.figure(figsize=(50, 50))
-            plt.imshow(img[:, :, ::-1])
-            plt.plot(labels[:, [1, 3, 3, 1, 1]].T, labels[:, [2, 2, 4, 4, 2]].T, '.-')
-            plt.axis('off')
-            plt.savefig('test.jpg')
-            time.sleep(10)
-
-        # for i in range(len(labels)):
-        #     cv2.imwrite("test2.jpg",
-        #             cv2.rectangle(img, (labels[i, 2], labels[i, 3]), (labels[i, 4], labels[i, 5]), (0, 255, 0), 1))
-
         nL = len(labels)
         if nL > 0:
             # convert xyxy to xywh

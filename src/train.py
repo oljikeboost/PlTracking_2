@@ -9,6 +9,7 @@ import os
 import json
 import torch
 import torch.utils.data
+from RandAugment import RandAugment
 from torchvision.transforms import transforms as T
 from opts import opts
 from models.model import create_model, load_model, save_model
@@ -31,8 +32,23 @@ def main(opt):
     dataset_root = data_config['root']
 
     f.close()
-    transforms = T.Compose([T.ToTensor()])
-    dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=True, transforms=transforms)
+
+    if opt.randaug:
+        rangAug = RandAugment(2, 9)
+        new_augs = []
+        for x in rangAug.augment_list:
+            if x[0].__name__ not in ['ShearX', 'ShearY', 'Rotate', 'TranslateXabs', 'TranslateYabs']:
+                new_augs.append(x)
+        rangAug.augment_list = new_augs
+
+        transforms = T.Compose([rangAug,
+                                T.ToTensor()])
+        cust_aug = False
+    else:
+        transforms = T.Compose([T.ToTensor()])
+        cust_aug = True
+
+    dataset = Dataset(opt, dataset_root, trainset_paths, (1088, 608), augment=cust_aug, transforms=transforms)
     val_dataset = Dataset(opt, dataset_root, valset_paths, (1088, 608), augment=False, transforms=transforms)
     opt = opts().update_dataset_info_and_set_heads(opt, dataset)
     print(opt)
