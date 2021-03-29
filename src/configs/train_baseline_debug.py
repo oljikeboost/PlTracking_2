@@ -4,5 +4,5 @@ num_epochs = 30
 lr_step = '15'
 data_cfg = '../src/lib/cfg/custom.json'
 color_weight = 1.05
-randAug = True
+randaug = True
 num_workers = 0

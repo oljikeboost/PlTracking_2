@@ -11,6 +11,7 @@ import json
 import numpy as np
 import torch
 import copy
+from PIL import Image
 
 from torch.utils.data import Dataset
 from torchvision.transforms import transforms as T
@@ -226,6 +227,8 @@ class LoadImagesAndLabels:  # for training
         img = np.ascontiguousarray(img[:, :, ::-1])  # BGR to RGB
 
         if self.transforms is not None:
+            if self.opt.randaug:
+                img = Image.fromarray(img)
             img = self.transforms(img)
 
         return img, labels, img_path, (h, w)
