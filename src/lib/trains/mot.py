@@ -37,7 +37,7 @@ class MotLoss(torch.nn.Module):
         if opt.color_weight > 0:
             print(opt.color_weight)
             print("Adding color head...")
-            self.color_classifier = nn.Linear(self.emb_dim, 82)
+            self.color_classifier = nn.Linear(self.emb_dim, opt.num_teams)
             self.s_color = nn.Parameter(-1.05 * torch.ones(1))
 
         if opt.ball_weight > 0:

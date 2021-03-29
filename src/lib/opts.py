@@ -133,6 +133,8 @@ class opts(object):
                                  default='../src/lib/cfg/data.json',
                                  help='load data from cfg')
         self.parser.add_argument('--data_dir', type=str, default='/data/yfzhang/MOT/JDE')
+        self.parser.add_argument('--num_teams', type=int, default=82)
+
 
         # loss
         self.parser.add_argument('--angular_loss', action='store_true',
