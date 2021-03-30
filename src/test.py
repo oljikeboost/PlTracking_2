@@ -76,17 +76,16 @@ if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     opt = opts().init()
 
-    if opt.custom_val:
+    opt.load_model = os.path.join('../exp/mot/', opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
 
-        ### UCLA vs Washington 2-15-20,
-        seqs_str = '''
+    seqs_str = '''
                     2020.02.22-Michigan_at_Purdue,
                     2020.02.25-NorthCarolinaState_at_NorthCarolina,
                     2020.02.20-Oregon_at_ArizonaState,
                     2020.02.15-NotreDame_at_Duke,
                     UCLA vs Washington 2-15-20
                     '''
-        data_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
+    data_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
     seqs = [seq.strip() for seq in seqs_str.split(',') if seq.strip()!='']
 
     main(opt,
