@@ -49,13 +49,10 @@ def prepare_clips(input_video, events_data, frame_range=300):
     for en, ev in enumerate(events_data['events']):
         if ev['assist_jersey']:
             tgt_frame = ev['assist_frame_num']
+            tgt_frames.add(tgt_frame)
         else:
             continue
 
-        if tgt_frame in tgt_frames:
-            continue
-        else:
-            tgt_frames.add(tgt_frame)
 
         output_path = os.path.join(output_dir, 'clip_' + str(en) + '_' + str(tgt_frame) + '.mp4')
         if os.path.exists(output_path):
@@ -67,7 +64,19 @@ def prepare_clips(input_video, events_data, frame_range=300):
 
 def demo(opt):
 
+    list_of_test_games = '''
+                    2021_01_20_Colorado_at_Washington,
+                    2021_01_23_UCLA_at_Stanford,
+                    2021_01_31_UNLV_at_Nevada,
+                    2021_01_23_VirginiaMilitary_at_Mercer,
+                    2021_01_14_Washington_at_USC,
+                    2021_01_24_Utah_at_Washington
+    '''
+    list_of_test_games = [seq.strip() for seq in list_of_test_games.split(',') if seq.strip() != '']
+
     print("Creating both models")
+
+    opt.load_model = os.path.join('../exp/mot/', opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
     model = create_model(opt.arch, opt.heads, opt.head_conv, False)
     model = load_model(model, opt.load_model)
     model = model.to(torch.device('cuda'))
@@ -78,9 +87,10 @@ def demo(opt):
 
     crrt = 0
     all = 0
-    input_dir = opt.input_video
+    input_dir = '/home/ubuntu/oljike/data/videos2/'
     input_games = os.listdir(input_dir)
     input_games = [x for x in input_games if 'ipynb' not in x]
+    input_games = [x for x in input_games if x in list_of_test_games]
     for game_en, game in enumerate(tqdm(input_games)):
         game_dir = os.path.join(input_dir, game)
 
