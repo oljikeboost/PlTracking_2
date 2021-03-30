@@ -119,7 +119,7 @@ class JerseyDetector():
         # build the model from a config file and a checkpoint file
 
         self.class_model = JerseyModel(7)
-        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/SVHNClassifier-PyTorch/work_dirs/basic_randaug_fulldata/model-best.pth')
+        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_randaug_fulldata/model-best.pth')
         self.class_model.eval().cuda()
         self.ax = 1
 
