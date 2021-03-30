@@ -95,6 +95,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     else:
         from tracker.multitracker_jersey import JDETracker
         all_balls = None
+        ball_info = False
 
     tracker = JDETracker(opt)
     timer = Timer()
