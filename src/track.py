@@ -51,7 +51,6 @@ def get_online_info(tracker, img, img0, opt):
     return online_tlwhs, online_ids, online_hists, online_jersey, online_ball
 
 
-
 def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
     from tracker.multitracker import JDETracker
 
@@ -76,7 +75,6 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
     # save results
     write_results(result_filename, results, data_type)
     return frame_id, timer.average_time, timer.calls
-
 
 
 def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
