@@ -12,8 +12,8 @@ from tracking_utils.log import logger
 from tracking_utils.timer import Timer
 
 from gen_utils import write_results, write_results_custom, write_results_jersey, \
-                write_results_score, get_valid_seq,\
-                post_process_cls, get_hist, eval_seq, predict_km, write_video, operator_accuracy
+                get_valid_seq,post_process_cls, get_hist, eval_seq, predict_km, \
+                write_video, operator_accuracy
 
 def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
 

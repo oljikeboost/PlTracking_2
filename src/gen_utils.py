@@ -159,8 +159,6 @@ def predict_km(all_hists):
 def write_results(filename, results, data_type):
     if data_type == 'mot':
         save_format = '{frame},{id},{x1},{y1},{w},{h},1,-1,-1,-1\n'
-    elif data_type == 'kitti':
-        save_format = '{frame} {id} pedestrian 0 0 -10 {x1} {y1} {x2} {y2} -10 -10 -10 -1000 -1000 -1000 -10\n'
     else:
         raise ValueError(data_type)
 
@@ -181,10 +179,8 @@ def write_results(filename, results, data_type):
 def write_results_custom(filename, results, classes_list):
 
     save_format = '{id},{x1},{y1},{w},{h},{cls}'
-
     save_json = {}
 
-    # with open(filename, 'w') as f:
     for curr_res, classes in zip(results, classes_list):
         frame_id, tlwhs, track_ids = curr_res
         frame_res = []
@@ -205,11 +201,11 @@ def write_results_custom(filename, results, classes_list):
 
 
 def write_results_jersey(filename, results, classes_list, jersey_list, img0):
+
     imgh, imgw, _ = img0.shape
     save_format = '{id},{x1},{y1},{w},{h},{cls},{jersey}'
 
     save_json = {}
-    # with open(filename, 'w') as f:
     for curr_res, classes, curr_jerseys in zip(results, classes_list, jersey_list):
         frame_id, tlwhs, track_ids = curr_res
         frame_res = []
@@ -227,28 +223,6 @@ def write_results_jersey(filename, results, classes_list, jersey_list, img0):
     with open(filename, 'w') as f:
         json.dump(save_json, f)
 
-    logger.info('save results to {}'.format(filename))
-
-
-def write_results_score(filename, results, data_type):
-    if data_type == 'mot':
-        save_format = '{frame},{id},{x1},{y1},{w},{h},{s},1,-1,-1,-1\n'
-    elif data_type == 'kitti':
-        save_format = '{frame} {id} pedestrian 0 0 -10 {x1} {y1} {x2} {y2} -10 -10 -10 -1000 -1000 -1000 -10\n'
-    else:
-        raise ValueError(data_type)
-
-    with open(filename, 'w') as f:
-        for frame_id, tlwhs, track_ids, scores in results:
-            if data_type == 'kitti':
-                frame_id -= 1
-            for tlwh, track_id, score in zip(tlwhs, track_ids, scores):
-                if track_id < 0:
-                    continue
-                x1, y1, w, h = tlwh
-                x2, y2 = x1 + w, y1 + h
-                line = save_format.format(frame=frame_id, id=track_id, x1=x1, y1=y1, x2=x2, y2=y2, w=w, h=h, s=score)
-                f.write(line)
     logger.info('save results to {}'.format(filename))
 
 
@@ -302,8 +276,7 @@ def post_process_ocr(data, thresh=5):
             j += 1
             i = j
 
-        elif data['results'][str(en)]['score_bug_present'] and data['results'][str(en)][
-            'game_clock_running'] and not new_gap:
+        elif data['results'][str(en)]['score_bug_present'] and data['results'][str(en)]['game_clock_running'] and not new_gap:
             j += 1
             i = j
 
@@ -340,7 +313,7 @@ def post_process_cls(all_hists, results, jersey_proc=False):
     for track_id, cls_lst in id_to_cls_list.items():
         cls_lst = np.array(cls_lst).flatten().tolist()
         cnt = Counter(cls_lst)
-        mst_cmn = cnt.most_common()#[0][0]
+        mst_cmn = cnt.most_common()
         cmn_1st = mst_cmn[0][0]
 
         if cmn_1st is None:
@@ -362,7 +335,6 @@ def post_process_cls(all_hists, results, jersey_proc=False):
     for en, (frame_id, tlwhs, track_ids) in enumerate(results):
         curr_output = []
         for j in range(len(track_ids)):
-            # all_hists[en][j] = id_to_cls_val[track_ids[j]]
             curr_output.append(id_to_cls_val[track_ids[j]])
 
         output.append(curr_output)
@@ -396,7 +368,7 @@ def get_hist(tlwh, img0):
     return hist
 
 
-def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_image=True, frame_rate=30):
+def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
 
     if save_dir:
         mkdir_if_missing(save_dir)
@@ -405,11 +377,8 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
     timer = Timer()
     results = []
     frame_id = 0
-    #for path, img, img0 in dataloader:
     for i, (path, img, img0) in enumerate(dataloader):
         tracker.update_frame()
-        #if i % 8 != 0:
-            #continue
         if frame_id % 80 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
 
@@ -419,7 +388,6 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
         online_targets = tracker.update(blob, img0)
         online_tlwhs = []
         online_ids = []
-        #online_scores = []
         for t in online_targets:
             tlwh = t.tlwh
             tid = t.track_id
@@ -427,38 +395,15 @@ def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None, show_im
             if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
                 online_tlwhs.append(tlwh)
                 online_ids.append(tid)
-                #online_scores.append(t.score)
         timer.toc()
         # save results
         results.append((frame_id + 1, online_tlwhs, online_ids))
-        #results.append((frame_id + 1, online_tlwhs, online_ids, online_scores))
         if show_image or save_dir is not None:
             online_im = vis.plot_tracking(img0, online_tlwhs, online_ids, frame_id=frame_id,
                                           fps=1. / timer.average_time)
-        if show_image:
-            cv2.imshow('online_im', online_im)
         if save_dir is not None:
             cv2.imwrite(os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), online_im)
         frame_id += 1
     # save results
     write_results(result_filename, results, data_type)
-    #write_results_score(result_filename, results, data_type)
     return frame_id, timer.average_time, timer.calls
-
-def only_ffmpeg(opt):
-
-    result_root = opt.output_root if opt.output_root != '' else '.'
-    mkdir_if_missing(result_root)
-
-    logger.info('Starting tracking...')
-
-    dataloader = datasets.LoadVideo(opt.input_video, opt.img_size)
-    basename = os.path.basename(opt.input_video.split('.')[0])
-    result_filename = os.path.join(result_root, basename + '.json')
-    frame_rate = dataloader.frame_rate
-
-    if opt.output_format == 'video':
-        output_video_path = osp.join(result_root, basename + '.mp4')
-        cmd_str = 'ffmpeg -y -r {} -f image2 -i {}/%05d.jpg -b 5000k -c:v mpeg4 {}'.format(frame_rate, osp.join(result_root, 'frame'), output_video_path)
-        os.system(cmd_str)
-

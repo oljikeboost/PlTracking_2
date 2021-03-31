@@ -20,7 +20,7 @@ from opts import opts
 from gen_utils import eval_seq
 
 def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
-         save_images=False, save_videos=False, show_image=True):
+         save_images=False, save_videos=False):
     logger.setLevel(logging.INFO)
     result_root = os.path.join(data_root, '..', 'results', exp_name)
     mkdir_if_missing(result_root)
@@ -35,11 +35,8 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
         logger.info('start seq: {}'.format(seq))
         dataloader = datasets.LoadImages(osp.join(data_root, seq, 'img1'), opt.img_size)
         result_filename = os.path.join(result_root, '{}.txt'.format(seq))
-        # meta_info = open(os.path.join(data_root, seq, 'seqinfo.ini')).read()
-        # frame_rate = int(meta_info[meta_info.find('frameRate') + 10:meta_info.find('\nseqLength')])
-        frame_rate = int(60/5)
         nf, ta, tc = eval_seq(opt, dataloader, data_type, result_filename,
-                              save_dir=output_dir, show_image=show_image, frame_rate=frame_rate)
+                              save_dir=output_dir)
         n_frame += nf
         timer_avgs.append(ta)
         timer_calls.append(tc)
@@ -92,6 +89,5 @@ if __name__ == '__main__':
          data_root=data_root,
          seqs=seqs,
          exp_name=opt.load_model.split('/')[-2] + '_' + str(opt.conf_thres),
-         show_image=False,
          save_images=False,
          save_videos=False)
