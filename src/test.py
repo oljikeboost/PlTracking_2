@@ -15,7 +15,7 @@ import datasets.dataset.jde as datasets
 
 from tracking_utils.utils import mkdir_if_missing
 from opts import opts
-from gen_utils import eval_seq
+from track import eval_seq
 
 
 def main(opt, data_root='/data/MOT16/train', seqs=('MOT16-05',), exp_name='demo',

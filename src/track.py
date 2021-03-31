@@ -3,13 +3,13 @@ from __future__ import division
 from __future__ import print_function
 
 import _init_paths
-from collections import Counter
-import numpy as np
+
 import torch
-
-
+import numpy as np
+from collections import Counter
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer
+from tracking_utils.utils import mkdir_if_missing
 
 from gen_utils import write_results, write_results_custom, write_results_jersey, \
                 get_valid_seq,post_process_cls, get_hist, eval_seq, predict_km, \
@@ -49,6 +49,34 @@ def get_online_info(tracker, img, img0, opt):
 
 
     return online_tlwhs, online_ids, online_hists, online_jersey, online_ball
+
+
+
+def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
+    from tracker.multitracker import JDETracker
+
+    tracker = JDETracker(opt)
+    timer = Timer()
+    results = []
+    frame_id = 0
+    for i, (path, img, img0) in enumerate(dataloader):
+        tracker.update_frame()
+        if frame_id % 80 == 0:
+            logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
+
+        # run tracking
+        timer.tic()
+        online_tlwhs, online_ids, _, _, _ = get_online_info(tracker, img, img0, opt)
+
+        timer.toc()
+        # save results
+        results.append((frame_id + 1, online_tlwhs, online_ids))
+
+        frame_id += 1
+    # save results
+    write_results(result_filename, results, data_type)
+    return frame_id, timer.average_time, timer.calls
+
 
 
 def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
@@ -126,7 +154,6 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     limit = float('inf')
     all_hists = []
     all_jerseys = []
-    t_ball = False
 
     valid_frames = set()
     for i, (path, img, img0) in enumerate(dataloader):
