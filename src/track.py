@@ -15,6 +15,42 @@ from gen_utils import write_results, write_results_custom, write_results_jersey,
                 get_valid_seq,post_process_cls, get_hist, eval_seq, predict_km, \
                 write_video, operator_accuracy
 
+
+def get_online_info(tracker, img, img0, opt):
+
+    blob = torch.from_numpy(img).cuda().unsqueeze(0)
+    online_targets = tracker.update(blob, img0)
+    online_tlwhs = []
+    online_ids = []
+    online_hists = []
+    online_jersey = []
+    online_ball = []
+
+    t_jersey, t_ball = None, None
+    for t in online_targets:
+        tlwh = t.tlwh
+        tid = t.track_id
+
+        if hasattr(t, 'jersey_list'):
+            t_jersey = t.jersey_list[-1]
+
+        if hasattr(t, 'ball_list'):
+            t_ball = t.ball_list[-1]
+
+        vertical = tlwh[2] / tlwh[3] > 1.6
+        if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
+            online_tlwhs.append(tlwh)
+            online_ids.append(tid)
+            online_jersey.append(t_jersey)
+            online_ball.append(t_ball)
+
+            hist = get_hist(tlwh, img0)
+            online_hists.append(hist)
+
+
+    return online_tlwhs, online_ids, online_hists, online_jersey, online_ball
+
+
 def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
 
     from tracker.multitracker import JDETracker
@@ -38,22 +74,7 @@ def eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video, frame
                 valid_frames.add(i)
                 # run tracking
                 timer.tic()
-                blob = torch.from_numpy(img).cuda().unsqueeze(0)
-                online_targets = tracker.update(blob, img0)
-                online_tlwhs = []
-                online_ids = []
-                online_hists = []
-                for t in online_targets:
-                    tlwh = t.tlwh
-                    tid = t.track_id
-
-                    vertical = tlwh[2] / tlwh[3] > 1.6
-                    if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
-                        online_tlwhs.append(tlwh)
-                        online_ids.append(tid)
-
-                        hist = get_hist(tlwh, img0)
-                        online_hists.append(hist)
+                online_tlwhs, online_ids, online_hists, _, _ = get_online_info(tracker, img, img0, opt)
 
                 if len(online_hists)==0 :
                     all_hists.append(np.zeros((0,0)))
@@ -115,30 +136,8 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
 
             valid_frames.add(i)
             timer.tic()
-            blob = torch.from_numpy(img).cuda().unsqueeze(0)
-            online_targets = tracker.update(blob, img0)
-            online_tlwhs = []
-            online_ids = []
-            online_hists = []
-            online_jersey = []
-            online_ball = []
-            for t in online_targets:
-                tlwh = t.tlwh
-                tid = t.track_id
-                t_jersey = t.jersey_list[-1]
 
-                if ball_info:
-                    t_ball = t.ball_list[-1]
-
-                vertical = tlwh[2] / tlwh[3] > 1.6
-                if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
-                    online_tlwhs.append(tlwh)
-                    online_ids.append(tid)
-                    online_jersey.append(t_jersey)
-                    online_ball.append(t_ball)
-
-                    hist = get_hist(tlwh, img0)
-                    online_hists.append(hist)
+            online_tlwhs, online_ids, online_hists, online_jersey, online_ball = get_online_info(tracker, img, img0, opt)
 
             if len(online_hists) == 0:
                 all_hists.append(np.zeros((0,0)))
@@ -198,44 +197,24 @@ def test_clip(model, jerseyDetector, events_data, target_num, opt, dataloader, g
     valid_frames = set()
     for i, (path, img, img0) in enumerate(dataloader):
 
-        # curr_data = ocr_data['results'][str(i)]
-        # if curr_data['score_bug_present'] and curr_data['game_clock_running']:
+        # we process each frame (without if conditions) because
+        # the clips already have only game moments
+        if i==target_num:
+            target_frame = img0.copy()
+        valid_frames.add(i)
+        timer.tic()
+        online_tlwhs, online_ids, online_hists, online_jersey, _ = get_online_info(tracker, img, img0, opt)
 
-        if True:
-            if i==target_num:
-                target_frame = img0.copy()
-            valid_frames.add(i)
-            timer.tic()
-            blob = torch.from_numpy(img).cuda().unsqueeze(0)
-            online_targets = tracker.update(blob, img0)
-            online_tlwhs = []
-            online_ids = []
-            online_hists = []
-            online_jersey = []
-            for t in online_targets:
-                tlwh = t.tlwh
-                tid = t.track_id
-                t_jersey = t.jersey_list[-1]
+        if len(online_hists)==0 :
+            all_hists.append(np.zeros((0,0)))
+        else:
+            all_hists.append(np.array(online_hists))
 
-                vertical = tlwh[2] / tlwh[3] > 1.6
-                if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
-                    online_tlwhs.append(tlwh)
-                    online_ids.append(tid)
-                    online_jersey.append(t_jersey)
+        # save results
+        all_jerseys.append(online_jersey)
+        results.append((frame_id + 1, online_tlwhs, online_ids))
 
-                    hist = get_hist(tlwh, img0)
-                    online_hists.append(hist)
-
-            if len(online_hists)==0 :
-                all_hists.append(np.zeros((0,0)))
-            else:
-                all_hists.append(np.array(online_hists))
-
-            # save results
-            all_jerseys.append(online_jersey)
-            results.append((frame_id + 1, online_tlwhs, online_ids))
-
-            timer.toc()
+        timer.toc()
 
         if frame_id % 100 == 0:
             logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))

@@ -15,11 +15,10 @@ import datasets.dataset.jde as datasets
 
 from tracking_utils.utils import mkdir_if_missing
 from opts import opts
-
-
 from gen_utils import eval_seq
 
-def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), exp_name='demo',
+
+def main(opt, data_root='/data/MOT16/train', seqs=('MOT16-05',), exp_name='demo',
          save_images=False, save_videos=False):
     logger.setLevel(logging.INFO)
     result_root = os.path.join(data_root, '..', 'results', exp_name)
@@ -45,10 +44,6 @@ def main(opt, data_root='/data/MOT16/train', det_root=None, seqs=('MOT16-05',), 
         logger.info('Evaluate seq: {}'.format(seq))
         evaluator = Evaluator(data_root, seq, data_type)
         accs.append(evaluator.eval_file(result_filename))
-        if save_videos:
-            output_video_path = osp.join(output_dir, '{}.mp4'.format(seq))
-            cmd_str = 'ffmpeg -f image2 -i {}/%05d.jpg -c:v copy {}'.format(output_dir, output_video_path)
-            os.system(cmd_str)
 
     timer_avgs = np.asarray(timer_avgs)
     timer_calls = np.asarray(timer_calls)
@@ -83,7 +78,7 @@ if __name__ == '__main__':
                     UCLA vs Washington 2-15-20
                     '''
     data_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
-    seqs = [seq.strip() for seq in seqs_str.split(',') if seq.strip()!='']
+    seqs = [seq.strip() for seq in seqs_str.split(',') if seq.strip() != '']
 
     main(opt,
          data_root=data_root,
