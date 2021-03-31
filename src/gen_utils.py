@@ -45,30 +45,20 @@ def operator_accuracy(events_data, target_num, results, all_jersey, target_frame
         if frame_id != target_num:
             continue
 
-        frame_res = []
         for tlwh, track_id, jersey in zip(tlwhs, track_ids, jersey_list):
             if track_id < 0:
                 continue
             x1, y1, w, h = tlwh
             x2, y2 = x1 + w, y1 + h
 
-            bottom_left = np.array((x1, y2))
-            bottom_right = np.array((x2, y2))
             bottom_center = np.array(((x1+x2)/2, y2))
             player_location = np.array(player_location)
-            # d = np.linalg.norm(np.cross(bottom_right - bottom_left, bottom_left - player_location)) / np.linalg.norm(bottom_right - bottom_left)
             d = np.linalg.norm(bottom_center - player_location)
 
             if d < (x2 - x1) / 2 and d < min_dist:
                 min_dist = d
                 best_jersey = jersey
                 best_location = tlwh
-
-            # if target_frame is not None:
-            #     target_frame = cv2.putText(target_frame, str(int(d)) + '_' + str(jersey), (int((x1+x2)/2), int(y2)), cv2.FONT_HERSHEY_SIMPLEX,
-            #                                1, (255, 0, 0), 1)
-
-
 
     tgt_jersey = events_data['assist_jersey']
 
@@ -366,44 +356,3 @@ def get_hist(tlwh, img0):
     hist = cv2.normalize(hist, hist).flatten()
 
     return hist
-
-
-def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
-
-    if save_dir:
-        mkdir_if_missing(save_dir)
-
-    tracker = JDETracker(opt)
-    timer = Timer()
-    results = []
-    frame_id = 0
-    for i, (path, img, img0) in enumerate(dataloader):
-        tracker.update_frame()
-        if frame_id % 80 == 0:
-            logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
-
-        # run tracking
-        timer.tic()
-        blob = torch.from_numpy(img).cuda().unsqueeze(0)
-        online_targets = tracker.update(blob, img0)
-        online_tlwhs = []
-        online_ids = []
-        for t in online_targets:
-            tlwh = t.tlwh
-            tid = t.track_id
-            vertical = tlwh[2] / tlwh[3] > 1.6
-            if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
-                online_tlwhs.append(tlwh)
-                online_ids.append(tid)
-        timer.toc()
-        # save results
-        results.append((frame_id + 1, online_tlwhs, online_ids))
-        if show_image or save_dir is not None:
-            online_im = vis.plot_tracking(img0, online_tlwhs, online_ids, frame_id=frame_id,
-                                          fps=1. / timer.average_time)
-        if save_dir is not None:
-            cv2.imwrite(os.path.join(save_dir, '{:05d}.jpg'.format(frame_id)), online_im)
-        frame_id += 1
-    # save results
-    write_results(result_filename, results, data_type)
-    return frame_id, timer.average_time, timer.calls
