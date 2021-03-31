@@ -28,7 +28,6 @@ def demo(opt):
     if os.path.isdir(opt.input_video):
         all_vids = glob.glob(opt.input_video + '/*.mp4')
     else:
-        # opt.ocr = os.path.dirname(opt.ocr)
         all_vids = [opt.input_video]
 
     jersey = True
@@ -55,6 +54,7 @@ def demo(opt):
             eval_seq_ocr(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
                      frame_rate=frame_rate)
 
+    print("Inference Finished!")
 
 if __name__ == '__main__':
     os.environ['CUDA_VISIBLE_DEVICES'] = '0'
