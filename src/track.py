@@ -12,7 +12,7 @@ from tracking_utils.timer import Timer
 from tracking_utils.utils import mkdir_if_missing
 
 from gen_utils import write_results, write_results_custom, write_results_jersey, \
-                get_valid_seq,post_process_cls, get_hist, eval_seq, predict_km, \
+                get_valid_seq,post_process_cls, get_hist, predict_km, \
                 write_video, operator_accuracy
 
 

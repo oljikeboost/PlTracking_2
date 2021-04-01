@@ -7,6 +7,7 @@ import numpy as np
 import cv2
 import mmcv
 from PIL import Image
+from cython_util import crop_images
 from torch2trt import torch2trt
 
 class JerseyModel(torch.nn.Module):
@@ -222,7 +223,9 @@ class JerseyDetector():
     def infer(self, inp_data):
         output = []
 
+
         all_results = inference_batch_detector(self.det_model, inp_data)
+        # all_results = ([[np.array([[10,10,20,20,0.5], [10,10,20,20,0.6], [10,10,20,20,0.7]])]]*len(inp_data))
         for idx, result in enumerate(all_results):
 
             if len(result[0]) == 0:
