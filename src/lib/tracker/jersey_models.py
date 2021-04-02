@@ -1,3 +1,5 @@
+import _init_paths
+
 from mmdet.apis import init_detector, inference_detector, inference_batch_detector
 from torchvision import transforms
 import torch
@@ -7,8 +9,9 @@ import numpy as np
 import cv2
 import mmcv
 from PIL import Image
-from cython_util import crop_images
+from lib.tracker.crop_util import crop_images
 from torch2trt import torch2trt
+
 
 class JerseyModel(torch.nn.Module):
 
@@ -126,7 +129,7 @@ class JerseyDetector():
 
         # print("Converting to TRT...")
         # x = torch.rand((1, 3, 54, 54)).cuda()
-        # self.class_model = torch2trt(self.class_model, [x], use_onnx=True, max_batch_size=1)
+        # self.class_model = torch2trt(self.class_model, [x], use_onnx=True, max_batch_size=12)
         # self.ax = 2
         # print("Converted to TRT!")
 
@@ -156,7 +159,6 @@ class JerseyDetector():
 
         return [digit1_prediction.item(), digit2_prediction.item()]
 
-
     def classify_batch(self, crops):
 
         with torch.no_grad():
@@ -171,50 +173,52 @@ class JerseyDetector():
     def infer_batch(self, inp_data):
 
         all_results = inference_batch_detector(self.det_model, inp_data)
-        lost_ids = []
-        all_crops = []
-        for idx, result in enumerate(all_results):
+        cython_crops, lost_idx_cython = crop_images(all_results, inp_data, self.offset, self.transform)
 
-            if len(result[0]) == 0:
-                lost_ids.append(idx)
-                continue
+        # lost_ids = []
+        # all_crops = []
+        # for idx, result in enumerate(all_results):
+        #
+        #     if len(result[0]) == 0:
+        #         lost_ids.append(idx)
+        #         continue
+        #
+        #     img = inp_data[idx]
+        #
+        #     max_res = max(result[0], key=lambda x: x[-1])
+        #     max_prob = max_res[-1]
+        #     if max_prob < 0.6:
+        #         lost_ids.append(idx)
+        #         continue
+        #
+        #     max_res = max_res.astype(np.int)
+        #     jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
+        #                   max_res[0] - self.offset: max_res[2] + self.offset, :]
+        #
+        #     if 0 in jersey_crop.shape:
+        #         jersey_crop = img[max_res[1]: max_res[3],
+        #                       max_res[0]: max_res[2], :]
+        #
+        #     if 0 in jersey_crop.shape:
+        #         lost_ids.append(idx)
+        #         continue
+        #
+        #     jersey_crop = cv2.resize(jersey_crop, (64, 64))
+        #     jersey_crop = Image.fromarray(jersey_crop)
+        #     jersey_crop = self.transform(jersey_crop)
+        #     jersey_crop = jersey_crop.unsqueeze(dim=0)
+        #
+        #     all_crops.append(jersey_crop)
 
-            img = inp_data[idx]
-
-            max_res = max(result[0], key=lambda x: x[-1])
-            max_prob = max_res[-1]
-            if max_prob < 0.6:
-                lost_ids.append(idx)
-                continue
-
-            max_res = max_res.astype(np.int)
-            jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
-                          max_res[0] - self.offset: max_res[2] + self.offset, :]
-
-            if 0 in jersey_crop.shape:
-                jersey_crop = img[max_res[1]: max_res[3],
-                              max_res[0]: max_res[2], :]
-
-            if 0 in jersey_crop.shape:
-                lost_ids.append(idx)
-                continue
-
-            jersey_crop = cv2.resize(jersey_crop, (64, 64))
-            jersey_crop = Image.fromarray(jersey_crop)
-            jersey_crop = self.transform(jersey_crop)
-            jersey_crop = jersey_crop.unsqueeze(dim=0)
-
-            all_crops.append(jersey_crop)
-
-        if len(all_crops)==0:
+        if len(cython_crops)==0:
             return [None for _ in range(len(inp_data))]
 
-        jersey_res = self.classify_batch(all_crops)
+        jersey_res = self.classify_batch(cython_crops)
         output = []
         for l1, l2 in zip(jersey_res[0], jersey_res[1]):
             output.append(''.join([str(x) for x in [l1, l2] if x != 10]))
 
-        lost_ids = sorted(lost_ids, reverse=True)
+        lost_ids = sorted(lost_idx_cython, reverse=False)
         for i in lost_ids:
             output.insert(i, None)
 
