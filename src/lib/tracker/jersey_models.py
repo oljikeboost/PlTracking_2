@@ -163,8 +163,8 @@ class JerseyDetector():
             crops = torch.cat(crops, 0).cuda()
             length_logits, digit1_logits, digit2_logits = self.class_model(crops)
 
-            digit1_prediction = digit1_logits.max(2)[1]
-            digit2_prediction = digit2_logits.max(2)[1]
+            digit1_prediction = digit1_logits.max(1)[1]
+            digit2_prediction = digit2_logits.max(1)[1]
 
         return [digit1_prediction.tolist(), digit2_prediction.tolist()]
 
@@ -212,7 +212,7 @@ class JerseyDetector():
         jersey_res = self.classify_batch(all_crops)
         output = []
         for l1, l2 in zip(jersey_res[0], jersey_res[1]):
-            output.append(''.join([str(x) for x in [l1[0], l2[0]] if x != 10]))
+            output.append(''.join([str(x) for x in [l1, l2] if x != 10]))
 
         lost_ids = sorted(lost_ids, reverse=True)
         for i in lost_ids:
@@ -223,9 +223,7 @@ class JerseyDetector():
     def infer(self, inp_data):
         output = []
 
-
         all_results = inference_batch_detector(self.det_model, inp_data)
-        # all_results = ([[np.array([[10,10,20,20,0.5], [10,10,20,20,0.6], [10,10,20,20,0.7]])]]*len(inp_data))
         for idx, result in enumerate(all_results):
 
             if len(result[0]) == 0:
