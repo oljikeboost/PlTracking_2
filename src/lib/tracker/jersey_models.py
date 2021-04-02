@@ -175,41 +175,6 @@ class JerseyDetector():
         all_results = inference_batch_detector(self.det_model, inp_data)
         cython_crops, lost_idx_cython = crop_images(all_results, inp_data, self.offset, self.transform)
 
-        # lost_ids = []
-        # all_crops = []
-        # for idx, result in enumerate(all_results):
-        #
-        #     if len(result[0]) == 0:
-        #         lost_ids.append(idx)
-        #         continue
-        #
-        #     img = inp_data[idx]
-        #
-        #     max_res = max(result[0], key=lambda x: x[-1])
-        #     max_prob = max_res[-1]
-        #     if max_prob < 0.6:
-        #         lost_ids.append(idx)
-        #         continue
-        #
-        #     max_res = max_res.astype(np.int)
-        #     jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
-        #                   max_res[0] - self.offset: max_res[2] + self.offset, :]
-        #
-        #     if 0 in jersey_crop.shape:
-        #         jersey_crop = img[max_res[1]: max_res[3],
-        #                       max_res[0]: max_res[2], :]
-        #
-        #     if 0 in jersey_crop.shape:
-        #         lost_ids.append(idx)
-        #         continue
-        #
-        #     jersey_crop = cv2.resize(jersey_crop, (64, 64))
-        #     jersey_crop = Image.fromarray(jersey_crop)
-        #     jersey_crop = self.transform(jersey_crop)
-        #     jersey_crop = jersey_crop.unsqueeze(dim=0)
-        #
-        #     all_crops.append(jersey_crop)
-
         if len(cython_crops)==0:
             return [None for _ in range(len(inp_data))]
 
