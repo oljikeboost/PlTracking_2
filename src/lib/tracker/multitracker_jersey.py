@@ -1,6 +1,7 @@
 import numpy as np
 from numba import jit
 from collections import deque
+import _init_paths
 import itertools
 import os
 import os.path as osp
@@ -355,7 +356,8 @@ class JDETracker(object):
         id_feature = id_feature[new_idx]
 
         if len(jersey_crops) > 0:
-            jersey_dets = self.jersey_detector.infer(jersey_crops)
+            # jersey_dets = self.jersey_detector.infer(jersey_crops)
+            jersey_dets = self.jersey_detector.infer_batch(jersey_crops)
            
         if len(dets) > 0:
             detections = [STrack(STrack.tlbr_to_tlwh(tlbrs[:4]), tlbrs[4], f, j, self.track_buffer_size) for
