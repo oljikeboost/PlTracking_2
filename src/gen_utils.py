@@ -112,7 +112,7 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
             if i in valid_frames:
                 _, online_tlwhs, online_ids, = results[valid]
                 cls = all_hists[valid]
-                if all_jerseys:
+                if all_jerseys is not None:
                     jersey = all_jerseys[valid]
                 if all_balls is not None:
                     ball = all_balls[valid]
@@ -284,7 +284,21 @@ def post_process_ocr(data, thresh=5):
     return data
 
 
-def post_process_cls(all_hists, results, jersey_proc=False):
+def post_process_cls(all_hists, results, jersey_proc=False, is_sequent=False):
+
+
+    if is_sequent:
+        enn = 0
+        new_hists = []
+        for _, _, track_ids in results:
+            curr_output = []
+            for j in range(len(track_ids)):
+                curr_output.append(all_hists[enn])
+                enn += 1
+            new_hists.append(curr_output)
+        all_hists = new_hists
+
+
 
     ### First, we need to get the set of all the tracks
     ### After which, to find its corrsponding classes
@@ -298,6 +312,7 @@ def post_process_cls(all_hists, results, jersey_proc=False):
                 id_to_cls_list[track_id].append(cls)
             else:
                 id_to_cls_list[track_id] = [cls]
+
 
     id_to_cls_val = {}
     for track_id, cls_lst in id_to_cls_list.items():
