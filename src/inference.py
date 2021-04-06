@@ -14,7 +14,7 @@ from opts import opts
 from tracking_utils.utils import mkdir_if_missing
 from tracking_utils.log import logger
 import datasets.dataset.jde as datasets
-from track import eval_seq_ocr_jersey
+from track import eval_seq_ocr_jersey, eval_seq_ocr_jersey_sequent
 from gen_utils import post_process_ocr
 logger.setLevel(logging.INFO)
 
@@ -45,6 +45,8 @@ def demo(opt):
         ocr_data = post_process_ocr(ocr_data)
         eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
                      frame_rate=frame_rate)
+        # eval_seq_ocr_jersey_sequent(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
+        #              frame_rate=frame_rate)
 
 
     print("Inference Finished!")
