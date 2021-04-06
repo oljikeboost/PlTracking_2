@@ -4,19 +4,58 @@ from __future__ import print_function
 
 import _init_paths
 
+from tqdm import tqdm
 import torch
+import cv2
 import numpy as np
 from collections import Counter
 from tracking_utils.log import logger
 from tracking_utils.timer import Timer
 from tracking_utils.utils import mkdir_if_missing
-
+from torch.utils.data import Dataset, DataLoader
+from tracker.jersey_models import ListDataset, DetectionModel, ClassifierModel
 from gen_utils import write_results, write_results_custom, write_results_jersey, \
                 get_valid_seq,post_process_cls, get_hist, predict_km, \
                 write_video, operator_accuracy
 
 
-def get_online_info(tracker, img, img0, opt):
+def get_online_info_sequent(tracker, img, img0, opt, crop=False):
+
+    blob = torch.from_numpy(img).cuda().unsqueeze(0)
+    online_targets = tracker.update(blob, img0)
+    online_tlwhs = []
+    online_ids = []
+    online_hists = []
+
+    online_crops = []
+
+    for t in online_targets:
+        tlwh = t.tlwh
+        tid = t.track_id
+
+        vertical = tlwh[2] / tlwh[3] > 1.6
+        if tlwh[2] * tlwh[3] > opt.min_box_area and not vertical:
+            online_tlwhs.append(tlwh)
+            online_ids.append(tid)
+
+
+            hist = get_hist(tlwh, img0)
+            online_hists.append(hist)
+
+            tlwh_int = tlwh.astype(int)
+            crop = img0[tlwh_int[1]:tlwh_int[1] + tlwh_int[3],
+                                tlwh_int[0]: tlwh_int[0] + tlwh_int[2]]
+
+            if 0 in crop.shape:
+                online_crops.append(None)
+            else:
+                online_crops.append(crop)
+
+
+    return online_tlwhs, online_ids, online_hists, online_crops
+
+
+def get_online_info(tracker, img, img0, opt, crop=False):
 
     blob = torch.from_numpy(img).cuda().unsqueeze(0)
     online_targets = tracker.update(blob, img0)
@@ -25,6 +64,7 @@ def get_online_info(tracker, img, img0, opt):
     online_hists = []
     online_jersey = []
     online_ball = []
+    online_crops = []
 
     t_jersey, t_ball = None, None
     for t in online_targets:
@@ -47,8 +87,16 @@ def get_online_info(tracker, img, img0, opt):
             hist = get_hist(tlwh, img0)
             online_hists.append(hist)
 
+            if crop:
+                tlwh_int = tlwh.astype(int)
+                online_crops.append(img0[tlwh_int[1]:tlwh_int[1]+ tlwh_int[3],
+                                    tlwh_int[0]: tlwh_int[0] + tlwh_int[2]])
 
-    return online_tlwhs, online_ids, online_hists, online_jersey, online_ball
+
+    if not crop:
+        return online_tlwhs, online_ids, online_hists, online_jersey, online_ball
+    else:
+        return online_tlwhs, online_ids, online_hists, online_jersey, online_ball, online_crops
 
 
 def eval_seq(opt, dataloader, data_type, result_filename, save_dir=None):
@@ -204,6 +252,94 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     write_results_jersey(result_filename, results, all_hists, all_jerseys, img0)
 
     return frame_id, timer.average_time, timer.calls
+
+
+def eval_seq_ocr_jersey_sequent(ocr_data, opt, dataloader, result_filename, output_video, frame_rate=30):
+
+    from tracker.multitracker import JDETracker
+
+    tracker = JDETracker(opt)
+    timer = Timer()
+    results = []
+    frame_id = 0
+
+    limit = float('inf')
+    all_hists = []
+    all_jerseys = []
+    all_crops = []
+
+    valid_frames = set()
+    for i, (path, img, img0) in enumerate(dataloader):
+        curr_data = ocr_data['results'][str(i)]
+
+        if curr_data['score_bug_present']:# and curr_data['game_clock_running']:
+
+            valid_frames.add(i)
+            timer.tic()
+
+            online_tlwhs, online_ids, online_hists, online_crops = get_online_info_sequent(tracker, img, img0, opt, True)
+
+            if len(online_hists) == 0:
+                all_hists.append(np.zeros((0,0)))
+            else:
+                all_hists.append(np.array(online_hists))
+
+            # save results
+            all_crops.append(online_crops)
+
+            results.append((frame_id + 1, online_tlwhs, online_ids))
+
+            timer.toc()
+
+            if len(valid_frames) > limit: break
+
+        if frame_id % 100 == 0:
+            logger.info('Processing frame {} ({:.2f} fps)'.format(frame_id, 1. / max(1e-5, timer.average_time)))
+
+        frame_id += 1
+
+    del tracker
+    ### Predict the jersey regions
+    detModel = DetectionModel()
+    all_crops = np.concatenate([x for x in all_crops if len(x) > 0]).tolist()
+
+    batch_size = 128
+    all_detections = []
+    for i in tqdm(range(0, len(all_crops), batch_size)):
+        curr_batch = all_crops[i:i+batch_size]
+        online_dets = detModel.forward(curr_batch)
+        all_detections.extend(online_dets)
+
+    del detModel
+
+    ### Predict the jersey numbers
+    classModel = ClassifierModel()
+    all_jerseys = []
+    for i in tqdm(range(0, len(all_detections), batch_size)):
+        curr_batch = all_detections[i:i+batch_size]
+        curr_crops = all_crops[i:i+batch_size]
+        online_jerseys = classModel.forward_single(curr_batch, curr_crops)
+        all_jerseys.extend(online_jerseys)
+
+    del classModel
+
+
+    ### Predict the team labels
+    all_hists = predict_km(all_hists)
+    all_hists = post_process_cls(all_hists, results)
+
+    ### Post process for jersey numbers
+    all_jerseys = post_process_cls(all_jerseys, results, True, True)
+
+    ### Write to video
+    write_video(dataloader, results, output_video,
+                valid_frames, all_hists, ocr_data, img0, all_jerseys)
+
+    ### Write results to a File
+    write_results_jersey(result_filename, results, all_hists, all_jerseys, img0)
+
+    return frame_id, timer.average_time, timer.calls
+
 
 
 def test_clip(model, jerseyDetector, events_data, target_num, opt, dataloader, global_num=None):
