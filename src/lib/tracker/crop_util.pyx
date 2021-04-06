@@ -25,6 +25,9 @@ def crop_images(list all_results, list inp_data, np.int offset, transform):
     output = []
     lost_ids = []
     for idx, result in enumerate(all_results):
+        if result is None:
+            lost_ids.append(idx)
+            continue
 
         length = len(result[0])
         if length == 0:
