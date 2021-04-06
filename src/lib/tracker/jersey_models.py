@@ -11,6 +11,7 @@ import mmcv
 from PIL import Image
 from lib.tracker.crop_util import crop_images
 from torch2trt import torch2trt
+from torch.utils.data import Dataset, DataLoader
 
 
 class JerseyModel(torch.nn.Module):
@@ -238,3 +239,134 @@ class JerseyDetector():
             # cv2.imwrite('crops/crop_{}_{}.jpg'.format(idx, jersey_res), vis_img)
 
         return output
+
+
+class ListDataset(Dataset):
+    def __init__(self, data):
+        self.data = data
+
+    def __len__(self):
+        return len(self.data)
+
+    def __getitem__(self, idx):
+        return self.data[idx]
+
+class DetectionModel():
+
+    def __init__(self):
+        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey.py'
+        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData/epoch_150.pth'
+        self.det_model = init_detector(config_file, checkpoint_file, device='cuda')
+        self.det_model.eval()
+        self.offset = 2
+
+    def forward(self, inp_data):
+
+        results = inference_batch_detector(self.det_model, inp_data)
+        return results
+
+class ClassifierModel():
+
+    def __init__(self):
+        self.class_model = JerseyModel(7)
+        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_randaug_fulldata/model-best.pth')
+        self.class_model.eval().cuda()
+        self.ax = 1
+
+        self.offset = 2
+        self.transform = transforms.Compose([
+            transforms.CenterCrop([54, 54]),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])
+        ])
+
+    def classify_batch(self, crops):
+
+
+        with torch.no_grad():
+            crops = torch.cat(crops, 0).cuda()
+            length_logits, digit1_logits, digit2_logits = self.class_model(crops)
+
+            digit1_prediction = digit1_logits.max(1)[1]
+            digit2_prediction = digit2_logits.max(1)[1]
+
+        return [digit1_prediction.tolist(), digit2_prediction.tolist()]
+
+
+    def forward_batch(self, all_results, inp_data):
+
+        crops, lost_ids = crop_images(all_results, inp_data, self.offset, self.transform)
+
+        if len(crops)==0:
+            return [None for _ in range(len(inp_data))]
+
+        jersey_res = self.classify_batch(crops)
+        output = []
+        for l1, l2 in zip(jersey_res[0], jersey_res[1]):
+            output.append(''.join([str(x) for x in [l1, l2] if x != 10]))
+
+        lost_ids = sorted(lost_ids, reverse=False)
+        for i in lost_ids:
+            output.insert(i, None)
+
+        if len(output) != len(all_results) or len(output) != len(inp_data):
+            print("SHITTY THING")
+
+        return output
+
+    def forward_single(self, all_results, inp_data):
+        output = []
+
+        for idx, result in enumerate(all_results):
+            if result is None:
+                output.append(None)
+                continue
+            if len(result[0]) == 0:
+                output.append(None)
+                continue
+
+            img = inp_data[idx]
+
+            max_res = max(result[0], key=lambda x: x[-1])
+            max_prob = max_res[-1]
+            if max_prob < 0.6:
+                output.append(None)
+                continue
+
+            max_res = max_res.astype(np.int)
+            jersey_crop = img[max_res[1] - self.offset: max_res[3] + self.offset,
+                          max_res[0] - self.offset: max_res[2] + self.offset, :]
+
+            if 0 in jersey_crop.shape:
+                jersey_crop = img[max_res[1]: max_res[3],
+                              max_res[0]: max_res[2], :]
+
+            if 0 in jersey_crop.shape:
+                output.append(None)
+                continue
+
+            jersey_res = self.classify_jersey(jersey_crop)
+            jersey_res = ''.join([str(x) for x in jersey_res if x != 10])
+            output.append(jersey_res)
+
+        if len(output)!=len(inp_data):
+            print("Shitty data")
+
+        return output
+
+    def classify_jersey(self, numpy_image):
+
+        with torch.no_grad():
+
+            numpy_image = cv2.resize(numpy_image, (64, 64))
+
+            image = Image.fromarray(numpy_image)
+            image = self.transform(image)
+            images = image.unsqueeze(dim=0).cuda()
+
+            length_logits, digit1_logits, digit2_logits = self.class_model(images)
+
+            digit1_prediction = digit1_logits.max(self.ax)[1]
+            digit2_prediction = digit2_logits.max(self.ax)[1]
+
+        return [digit1_prediction.item(), digit2_prediction.item()]
