@@ -314,6 +314,17 @@ def dla34(pretrained=True, **kwargs):  # DLA-34
         model.load_pretrained_model(data='imagenet', name='dla34', hash='ba72cf86')
     return model
 
+
+def dla60(pretrained=True, **kwargs):  # DLA-34
+    Bottleneck.expansion = 2
+    model = DLA([1, 1, 1, 2, 3, 1],
+                [16, 32, 128, 256, 512, 1024],
+                block=Bottleneck, **kwargs)
+    if pretrained is not None:
+        model.load_pretrained_model(data='imagenet', name='dla60', hash='24839fc4')
+    return model
+
+
 class Identity(nn.Module):
 
     def __init__(self):
