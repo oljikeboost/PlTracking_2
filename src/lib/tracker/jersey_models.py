@@ -119,12 +119,12 @@ class JerseyModel(torch.nn.Module):
 
 class JerseyDetector():
     def __init__(self,):
-        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey.py'
-        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData/epoch_150.pth'
+        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey_smallres.py'
+        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData_smallRes/epoch_90.pth'
         # build the model from a config file and a checkpoint file
 
         self.class_model = JerseyModel(7)
-        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_randaug_fulldata/model-best.pth')
+        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_newdata/model-best.pth')
         self.class_model.eval().cuda()
         self.ax = 1
 
@@ -241,6 +241,8 @@ class JerseyDetector():
         return output
 
 
+
+#### Sequential models
 class ListDataset(Dataset):
     def __init__(self, data):
         self.data = data
@@ -254,8 +256,8 @@ class ListDataset(Dataset):
 class DetectionModel():
 
     def __init__(self):
-        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey.py'
-        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData/epoch_150.pth'
+        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey_smallres.py'
+        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData_smallRes/epoch_90.pth'
         self.det_model = init_detector(config_file, checkpoint_file, device='cuda')
         self.det_model.eval()
         self.offset = 2
