@@ -72,11 +72,17 @@ if __name__=="__main__":
 
 
     seqs_str = '''
-                2020.02.22-Michigan_at_Purdue,
+                2020.02.22-Michigan_at_Purdue, 
                 2020.02.25-NorthCarolinaState_at_NorthCarolina,
-                2020.02.20-Oregon_at_ArizonaState,
+                2020.02.20-Oregon_at_ArizonaState, 
                 2020.02.15-NotreDame_at_Duke,
-                UCLA vs Washington 2-15-20
+                UCLA vs Washington 2-15-20,
+                2021_01_20_Colorado_at_Washington,
+                2021_01_23_UCLA_at_Stanford, 
+                2021_01_31_UNLV_at_Nevada, 
+                2021_01_23_VirginiaMilitary_at_Mercer,
+                2021_01_14_Washington_at_USC, 
+                2021_01_24_Utah_at_Washington
                 '''
     data_root = '/home/ubuntu/oljike/PlayerTracking/data/mot_data/images/train'
     val_dirs = [seq.strip() for seq in seqs_str.split(',') if seq.strip() != '']
