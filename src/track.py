@@ -205,7 +205,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     for i, (path, img, img0) in enumerate(dataloader):
         curr_data = ocr_data['results'][str(i)]
 
-        if curr_data['score_bug_present']:# and curr_data['game_clock_running']:
+        if curr_data['score_bug_present'] and curr_data['game_clock_running']:
 
             valid_frames.add(i)
             timer.tic()
@@ -240,9 +240,6 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
 
     ### Post process for jersey numbers
     all_jerseys = post_process_cls(all_jerseys, results, True)
-
-    ### Post process for ball possession
-    #TODO
 
     ### Write to video
     write_video(dataloader, results, output_video,
