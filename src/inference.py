@@ -19,26 +19,29 @@ from gen_utils import post_process_ocr
 logger.setLevel(logging.INFO)
 
 def demo(opt):
+    opt.load_model = os.path.join('../exp/mot/', opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
 
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)
 
     logger.info('Starting tracking...')
 
-    if os.path.isdir(opt.input_video):
-        all_vids = glob.glob(opt.input_video + '/*.mp4')
-    else:
-        all_vids = [opt.input_video]
+    all_vids = opt.input_video.split(',')
+    if opt.ocr is not None:
+        all_ocr = opt.ocr.split(',')
 
-    for input_video in all_vids:
+
+    for en, input_video in enumerate(all_vids):
+        input_video = input_video.strip()
         dataloader = datasets.LoadVideo(input_video, opt.img_size)
         basename = os.path.basename(input_video.replace('.mp4', ''))
         result_filename = os.path.join(result_root, basename + '.json')
         output_video_path = osp.join(result_root, basename + '.mp4')
 
         frame_rate = dataloader.frame_rate
+
         if opt.ocr is not None:
-            ocr_data = open(opt.ocr)
+            ocr_data = open(all_ocr[en].strip())
             ocr_data = json.load(ocr_data)
 
         ### Post process missing intervals in ocr data
