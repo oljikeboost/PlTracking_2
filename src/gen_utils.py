@@ -107,7 +107,7 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
         curr_data = ocr_data['results'][str(i)]
 
         # if curr_data['score_bug_present'] and curr_data['game_clock_running']:
-        if curr_data['score_bug_present']:
+        if curr_data['score_bug_present'] and curr_data['game_clock_running']:
 
             if i in valid_frames:
                 _, online_tlwhs, online_ids, = results[valid]
@@ -120,6 +120,7 @@ def write_video(dataloader, results, output_video, valid_frames, all_hists, ocr_
                                               fps=dataloader.frame_rate)
                 valid += 1
 
+        if i>10000: break
         out.write(img0)
         frame_id += 1
 
@@ -321,7 +322,7 @@ def post_process_cls(all_hists, results, jersey_proc=False, is_sequent=False):
         mst_cmn = cnt.most_common()
         cmn_1st = mst_cmn[0][0]
 
-        if cmn_1st is None:
+        if cmn_1st is None or cmn_1st=='None':
             if len(mst_cmn)>1:
                 cmn_2nd = mst_cmn[1]
                 if cmn_2nd[1]>20 and str(cmn_2nd[0]) in ALLOWED:

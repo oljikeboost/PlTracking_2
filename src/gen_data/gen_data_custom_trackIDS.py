@@ -24,7 +24,6 @@ for seq in seqs:
 
     gt_txt = osp.join(seq_root, seq, 'gt', 'gt.txt')
     gt = np.loadtxt(gt_txt, delimiter=',')
-    # gt = np.genfromtxt(gt_txt, dtype=np.float64)
 
     seq_label_root = osp.join(label_root, seq, 'img1')
     mkdirs(seq_label_root)
