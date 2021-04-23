@@ -106,6 +106,9 @@ class opts(object):
         self.parser.add_argument('--keep_res', action='store_true',
                                  help='keep the original resolution'
                                       ' during validation.')
+
+        self.parser.add_argument('--frames_limit', type=int, default=1e9,
+                                 help='max number of output objects.')
         # tracking
         self.parser.add_argument('--test_mot16', default=False, help='test mot16')
         self.parser.add_argument('--val_mot15', default=False, help='val mot15')
