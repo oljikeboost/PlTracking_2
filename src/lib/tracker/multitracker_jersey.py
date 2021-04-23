@@ -197,7 +197,7 @@ class JDETracker(object):
             # iou_assign=0.7,
             # unconf_assign=0.7):
             # # CURRENT PARAMETERS
-            frame_rate=210,
+            frame_rate=60,
             track_buffer_size=90,
             emb_assign=0.4,
             iou_assign=0.7,
