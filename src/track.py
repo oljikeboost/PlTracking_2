@@ -197,7 +197,7 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     results = []
     frame_id = 0
 
-    limit = float('inf')
+    limit = opt.frames_limit #float('inf')
     all_hists = []
     all_jerseys = []
 
@@ -237,6 +237,9 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     ### Predict the team labels
     all_hists = predict_km(all_hists)
     all_hists = post_process_cls(all_hists, results)
+
+    ### Write results before postprocessing
+    write_results_jersey(result_filename.replace('.json', '_raw.json'), results, all_hists, all_jerseys, img0)
 
     ### Post process for jersey numbers
     all_jerseys = post_process_cls(all_jerseys, results, True)
