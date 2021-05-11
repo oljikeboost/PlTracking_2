@@ -41,7 +41,7 @@ def demo(opt):
         frame_rate = dataloader.frame_rate
 
         if opt.ocr is not None:
-            ocr_data = open(all_ocr[en].strip())
+            ocr_data = open(input_video.replace('.mp4', '_ocr.json'))
             ocr_data = json.load(ocr_data)
 
         ### Post process missing intervals in ocr data
