@@ -185,14 +185,23 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
 
     if opt.ball_weight>0:
         from tracker.multitracker_jersey_ball import JDETracker
+        tracker = JDETracker(opt)
         ball_info = True
         all_balls = []
+    elif opt.train_recheck:
+        from tracker.multitracker_jersey_recheck import JDETracker
+        from models.networks.recheck import Recheck
+
+        recheck = Recheck()
+        recheck.restore('path/to/saved/model')
+        tracker = JDETracker(opt, recheck=recheck)
     else:
         from tracker.multitracker_jersey import JDETracker
+        tracker = JDETracker(opt)
         all_balls = None
         ball_info = False
 
-    tracker = JDETracker(opt)
+
     timer = Timer()
     results = []
     frame_id = 0
