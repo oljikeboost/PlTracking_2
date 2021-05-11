@@ -474,6 +474,116 @@ class JointDataset(LoadImagesAndLabels):  # for training
         return ret
 
 
+class RecheckDataset(JointDataset):
+
+    def __init__(self, opt, root, paths, img_size=(1088, 608), augment=False, transforms=None):
+        super().__init__(opt, root, paths, img_size, augment, transforms)
+
+
+    def get_single(self, files_index):
+
+        for i, c in enumerate(self.cds):
+            if files_index >= c:
+                ds = list(self.label_files.keys())[i]
+                start_index = c
+
+        img_path = self.img_files[ds][files_index - start_index]
+        label_path = self.label_files[ds][files_index - start_index]
+
+        imgs, labels, img_path, (input_h, input_w) = self.get_data(img_path, label_path)
+        for i, _ in enumerate(labels):
+            if labels[i, 1] > -1:
+                labels[i, 1] += self.tid_start_index[ds]
+
+        output_h = imgs.shape[1] // self.opt.down_ratio
+        output_w = imgs.shape[2] // self.opt.down_ratio
+        num_classes = self.num_classes
+        num_objs = labels.shape[0]
+        hm = np.zeros((num_classes, output_h, output_w), dtype=np.float32)
+        if self.opt.ltrb:
+            wh = np.zeros((self.max_objs, 4), dtype=np.float32)
+        else:
+            wh = np.zeros((self.max_objs, 2), dtype=np.float32)
+        reg = np.zeros((self.max_objs, 2), dtype=np.float32)
+        ind = np.zeros((self.max_objs, ), dtype=np.int64)
+        reg_mask = np.zeros((self.max_objs, ), dtype=np.uint8)
+        ids = np.zeros((self.max_objs, ), dtype=np.int64)
+        colors = np.zeros((self.max_objs,), dtype=np.int64)
+        ball_poss = np.zeros((self.max_objs,), dtype=np.int64)
+        bbox_xys = np.zeros((self.max_objs, 4), dtype=np.float32)
+
+        draw_gaussian = draw_msra_gaussian if self.opt.mse_loss else draw_umich_gaussian
+        for k in range(num_objs):
+            label = labels[k]
+            bbox = label[2:6]
+            cls_id = int(label[0])
+            bbox[[0, 2]] = bbox[[0, 2]] * output_w
+            bbox[[1, 3]] = bbox[[1, 3]] * output_h
+            bbox_amodal = copy.deepcopy(bbox)
+            bbox_amodal[0] = bbox_amodal[0] - bbox_amodal[2] / 2.
+            bbox_amodal[1] = bbox_amodal[1] - bbox_amodal[3] / 2.
+            bbox_amodal[2] = bbox_amodal[0] + bbox_amodal[2]
+            bbox_amodal[3] = bbox_amodal[1] + bbox_amodal[3]
+            bbox[0] = np.clip(bbox[0], 0, output_w - 1)
+            bbox[1] = np.clip(bbox[1], 0, output_h - 1)
+            h = bbox[3]
+            w = bbox[2]
+
+            bbox_xy = copy.deepcopy(bbox)
+            bbox_xy[0] = bbox_xy[0] - bbox_xy[2] / 2
+            bbox_xy[1] = bbox_xy[1] - bbox_xy[3] / 2
+            bbox_xy[2] = bbox_xy[0] + bbox_xy[2]
+            bbox_xy[3] = bbox_xy[1] + bbox_xy[3]
+
+            if h > 0 and w > 0:
+                radius = gaussian_radius((math.ceil(h), math.ceil(w)))
+                radius = max(0, int(radius))
+                radius = 6 if self.opt.mse_loss else radius
+                #radius = max(1, int(radius)) if self.opt.mse_loss else radius
+                ct = np.array(
+                    [bbox[0], bbox[1]], dtype=np.float32)
+                ct_int = ct.astype(np.int32)
+                draw_gaussian(hm[cls_id], ct_int, radius)
+                if self.opt.ltrb:
+                    wh[k] = ct[0] - bbox_amodal[0], ct[1] - bbox_amodal[1], \
+                            bbox_amodal[2] - ct[0], bbox_amodal[3] - ct[1]
+                else:
+                    wh[k] = 1. * w, 1. * h
+                ind[k] = ct_int[1] * output_w + ct_int[0]
+                reg[k] = ct - ct_int
+                reg_mask[k] = 1
+                ids[k] = label[1]
+                colors[k] = label[6]
+                ball_poss[k] = label[7]
+                bbox_xys[k] = bbox_xy
+
+        ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
+               'ids': ids, 'colors': colors, 'bbox': bbox_xys, 'ball_poss': ball_poss}
+        # ret = {'input': imgs, 'hm': hm, 'reg_mask': reg_mask, 'ind': ind, 'wh': wh, 'reg': reg,
+        #        'ids': ids, 'colors': colors, 'bbox': bbox_xys}
+
+        return ret
+
+
+    def __len__(self):
+        return self.nF - 1
+
+
+    def __getitem__(self, files_index):
+        for i, c in enumerate(self.cds):
+            if files_index >= c:
+                ds = list(self.label_files.keys())[i]
+                start_index = c
+
+        img_path1 = self.img_files[ds][files_index - start_index]
+        img_path2 = self.img_files[ds][files_index - start_index + 1]
+
+        if img_path1.split('/')[-3] != img_path2.split('/')[-3]:
+            return None
+        else:
+            return self.get_single(files_index), self.get_single(files_index + 1)
+
+
 class DetDataset(LoadImagesAndLabels):  # for training
     def __init__(self, root, paths, img_size=(1088, 608), augment=False, transforms=None):
 
