@@ -306,7 +306,7 @@ class JDETracker(object):
             bbox = tlbr.astype(np.int)
             crop = img0[bbox[1]:bbox[3], bbox[0]: bbox[2]]
             shape = crop.shape
-            if 0 not in shape and 1 not in shape:
+            if shape[0]>10 and shape[1]>10:
                 new_idx.append(en)
                 jersey_crops.append(crop)
 
