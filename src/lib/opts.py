@@ -63,6 +63,8 @@ class opts(object):
                                  help='output stride. Currently only supports 4.')
         self.parser.add_argument('--norm_eval', action='store_true',
                                  help='freeze bn.')
+        self.parser.add_argument('--train_recheck', default=False,
+                                 help='...')
 
         # input
         self.parser.add_argument('--input_res', type=int, default=-1,
@@ -181,8 +183,10 @@ class opts(object):
         self.parser.add_argument('--not_reg_offset', action='store_true',
                                  help='not regress local offset.')
 
-    def parse(self, args=''):
-        if args == '':
+    def parse(self, args='', jupyter=False):
+        if jupyter:
+            opt = self.parser.parse_args('')
+        elif args == '':
             opt = self.parser.parse_args()
         else:
             opt = self.parser.parse_args(args)
@@ -270,7 +274,7 @@ class opts(object):
         print('heads', opt.heads)
         return opt
 
-    def init(self, args=''):
+    def init(self, args='', jupyter=False):
         default_dataset_info = {
             'mot': {'default_resolution': [608, 1088], 'num_classes': 1,
                     'mean': [0.408, 0.447, 0.470], 'std': [0.289, 0.274, 0.278],
@@ -282,7 +286,7 @@ class opts(object):
                 for k, v in entries.items():
                     self.__setattr__(k, v)
 
-        opt = self.parse(args)
+        opt = self.parse(args, jupyter)
         dataset = Struct(default_dataset_info[opt.task])
         opt.dataset = dataset.dataset
         opt = self.update_dataset_info_and_set_heads(opt, dataset)
