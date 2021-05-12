@@ -4,6 +4,7 @@ ENV PATH="/root/miniconda3/bin:${PATH}"
 ARG PATH="/root/miniconda3/bin:${PATH}"
 RUN apt-get update
 
+
 # Run python installation
 RUN apt update && apt install -y --no-install-recommends \
     git \
@@ -14,6 +15,7 @@ RUN apt update && apt install -y --no-install-recommends \
 RUN pip3 -q install pip --upgrade
 
 # Install conda 
+RUN apt-get install wget
 RUN wget \
     https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh \
     && mkdir /root/.conda \
@@ -22,7 +24,18 @@ RUN wget \
 RUN conda --version
 
 # Clone the repo
+RUN ls
 RUN git clone https://github.com/oljikeboost/PlayerTracking.git
 RUN cd PlayerTracking
 RUN git clone https://github.com/jinfagang/DCNv2_latest
+RUN conda env create -f env.yml
+# RUN conda init bash 
+SHELL ["conda", "run", "-n", "FairMOT", "conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=10.0 -c pytorch"]
 
+
+RUN cd DCNv2_latest
+
+RUN ./make.sh
+RUN cd .. 
+
+CMD ["python", "/src/inference.py"]

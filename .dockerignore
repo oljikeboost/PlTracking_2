@@ -1,0 +1,13 @@
+*.html
+*dist*
+*UNKNOWN*
+pretrained
+*mp4
+.ipynb_checkpoints
+experiments
+*jpg
+exp/mot
+*.out
+demos/*
+.git
+
