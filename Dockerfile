@@ -25,10 +25,13 @@ RUN conda --version
 
 # Clone the repo
 RUN ls
-RUN git clone https://github.com/oljikeboost/PlayerTracking.git
-RUN cd PlayerTracking
+RUN git clone https://github.com/oljikeboost/Tracking.git
+RUN ls
+RUN cd Tracking
+RUN ls
 RUN git clone https://github.com/jinfagang/DCNv2_latest
-RUN conda env create -f env.yml
+RUN ls
+RUN conda env create -f Tracking/env.yml
 # RUN conda init bash 
 SHELL ["conda", "run", "-n", "FairMOT", "conda install pytorch==1.2.0 torchvision==0.4.0 cudatoolkit=10.0 -c pytorch"]
 
