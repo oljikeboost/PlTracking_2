@@ -107,7 +107,8 @@ RUN sudo apt-get update && sudo apt-get install -y ffmpeg libsm6 libxext6 git ni
     && sudo  rm -rf /var/lib/apt/lists/*
 
 # Install MMCV
-RUN pip install mmcv-full
+RUN pip install mmcv-full==1.2
+
 #==latest+torch1.6.0+cu101 -f https://openmmlab.oss-accelerate.aliyuncs.com/mmcv/dist/index.html
 
 # Install MMDetection
@@ -118,14 +119,33 @@ ENV FORCE_CUDA="1"
 RUN pip install -r requirements/build.txt
 RUN pip install --no-cache-dir -e .
 
+### Additional packages
+RUN pip install cython-bbox
+RUN pip install sklearn
+RUN pip install numba
+RUN pip install yacs
+RUN pip install lap
+
+
+
+### insert some random VAR to break cahche
+ARG INCUBATOR_VER=unknown2
 
 ### Clone the Tracking Git 
 RUN git clone https://github.com/oljikeboost/Tracking.git /home/user/Tracking/
 RUN git clone https://github.com/oljikeboost/DCNv2.git /home/user/Tracking/DCNv2_latest/
 WORKDIR /home/user/Tracking/DCNv2_latest
 RUN ./make.sh
-WORKDIR /home/user/Tracking
 
+
+### Download all weights to docker internal directory
+RUN mkdir /home/user/weights
+WORKDIR /home/user/weights
+RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth
+RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth
+RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py
+
+WORKDIR /home/user/Tracking
 
 ### Clone 
 

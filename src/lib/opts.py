@@ -134,7 +134,11 @@ class opts(object):
         self.parser.add_argument('--output-format', type=str, default='video', help='video or text')
         self.parser.add_argument('--output_root', type=str, default='../demos', help='expected output root path')
         self.parser.add_argument('--ocr', type=str, default=None, help='expected output root path')
-
+        self.parser.add_argument('--detector_config', type=str, default='/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey_smallres.py',
+                                 help='expected output root path')
+        self.parser.add_argument('--detector_path', type=str, default='/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData_smallRes/epoch_90.pth',
+                                 help='expected output root path')
+        self.parser.add_argument('--classifier_path', type=str, default='/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_newdata/model-best.pth', help='expected output root path')
         # mot
         self.parser.add_argument('--data_cfg', type=str,
                                  default='../src/lib/cfg/data.json',

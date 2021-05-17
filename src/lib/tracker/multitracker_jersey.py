@@ -246,7 +246,7 @@ class JDETracker(object):
         STrack.features = []
 
         if jersey_detector is None:
-            self.jersey_detector = JerseyDetector()
+            self.jersey_detector = JerseyDetector(opt)
         else:
             self.jersey_detector = jersey_detector
 

@@ -14,3 +14,7 @@ output_root = '/home/user/data/docker/2021_01_20_Colorado_at_Washington'
 ocr = '/home/user/data/demo_vids/2021_01_20_Colorado_at_Washington/2021_01_20_Colorado_at_Washington_ocr.json'
 frames_limit = 10000
 
+detector_config = '/home/user/weights/yolov3_d53_320_273e_jersey_smallres.py'
+detector_path = '/home/user/weights/epoch_90.pth'
+classifier_path = '/home/user/weights/model-best.pth'
+

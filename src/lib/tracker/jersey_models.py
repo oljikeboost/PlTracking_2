@@ -10,7 +10,7 @@ import cv2
 import mmcv
 from PIL import Image
 from lib.tracker.crop_util import crop_images
-from torch2trt import torch2trt
+# from torch2trt import torch2trt
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -118,13 +118,13 @@ class JerseyModel(torch.nn.Module):
 
 
 class JerseyDetector():
-    def __init__(self,):
-        config_file = '/home/ubuntu/oljike/BallTracking/mmdetection/configs/yolo_jersey/yolov3_d53_320_273e_jersey_smallres.py'
-        checkpoint_file = '/home/ubuntu/oljike/BallTracking/mmdetection/work_dirs/jersey_region_yolov3-320_fullData_smallRes/epoch_90.pth'
+    def __init__(self, opt):
+        config_file = opt.detector_config
+        checkpoint_file = opt.detector_path
         # build the model from a config file and a checkpoint file
 
         self.class_model = JerseyModel(7)
-        self.class_model.restore('/home/ubuntu/oljike/ocr_jersey/JerseyClassifier/work_dirs/basic_newdata/model-best.pth')
+        self.class_model.restore(opt.classifier_path)
         self.class_model.eval().cuda()
         self.ax = 1
 
