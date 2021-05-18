@@ -93,7 +93,7 @@ RUN sudo apt-get update && sudo apt-get install -y --no-install-recommends \
     libgtk2.0-0 \
     libcanberra-gtk-module \
  && sudo rm -rf /var/lib/apt/lists/*
-RUN conda install -y -c menpo opencv3=3.1.0 \
+RUN conda install -y -c menpo opencv3 \
  && conda clean -ya
  
  
@@ -106,11 +106,6 @@ RUN sudo apt-get update && sudo apt-get install -y ffmpeg libsm6 libxext6 git ni
     && sudo  apt-get clean \
     && sudo  rm -rf /var/lib/apt/lists/*
 
-# Install MMCV
-RUN pip install mmcv-full==1.2
-
-#==latest+torch1.6.0+cu101 -f https://openmmlab.oss-accelerate.aliyuncs.com/mmcv/dist/index.html
-
 # Install MMDetection
 RUN conda clean --all
 RUN git clone https://github.com/oljikeboost/mmdet /home/user/mmdetection
@@ -119,20 +114,36 @@ ENV FORCE_CUDA="1"
 RUN pip install -r requirements/build.txt
 RUN pip install --no-cache-dir -e .
 
+# Install mmcv from the source 
+WORKDIR /home/user
+RUN git clone https://github.com/open-mmlab/mmcv.git
+WORKDIR /home/user/mmcv
+RUN git checkout f4de390b3c808fe20b1d36d783cac5d7887b41e9
+RUN MMCV_WITH_OPS=1 pip install -e .
+
+
 ### Additional packages
+RUN pip install opencv-python
 RUN pip install cython-bbox
 RUN pip install sklearn
 RUN pip install numba
 RUN pip install yacs
 RUN pip install lap
 
-
-
 ### insert some random VAR to break cahche
-ARG INCUBATOR_VER=unknown2
+ARG INCUBATOR_VER=unknown1
+
+### Install nano
+RUN sudo apt-get update && sudo apt-get install nano
 
 ### Clone the Tracking Git 
 RUN git clone https://github.com/oljikeboost/Tracking.git /home/user/Tracking/
+
+### Run cython build
+WORKDIR /home/user/Tracking/src/lib/tracker 
+RUN python setup.py build_ext --inplace
+
+### install DCN
 RUN git clone https://github.com/oljikeboost/DCNv2.git /home/user/Tracking/DCNv2_latest/
 WORKDIR /home/user/Tracking/DCNv2_latest
 RUN ./make.sh
@@ -141,13 +152,12 @@ RUN ./make.sh
 ### Download all weights to docker internal directory
 RUN mkdir /home/user/weights
 WORKDIR /home/user/weights
-RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth
-RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth
-RUN wget https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py
+RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth
+RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth
+RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py
+RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py
 
 WORKDIR /home/user/Tracking
-
-### Clone 
 
 # Set the default command to python3
 CMD ["/bin/bash"]
