@@ -127,7 +127,7 @@ RUN pip install opencv-python && pip install cython-bbox && pip install sklearn 
     pip install lap
 
 ### insert some random VAR to break cahche
-ARG INCUBATOR_VER=unknown1
+ARG INCUBATOR_VER=unknown2
 
 ### Install nano
 RUN sudo apt-get update && sudo apt-get install nano
@@ -151,7 +151,8 @@ WORKDIR /home/user/weights
 RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth && \
     wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth && \
     wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py && \
-    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py
+    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py && \
+    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model_30.pth
 
 WORKDIR /home/user/Tracking
 RUN chmod +x inference.sh

@@ -19,7 +19,7 @@ from gen_utils import post_process_ocr
 logger.setLevel(logging.INFO)
 
 def demo(opt):
-    opt.load_model = os.path.join('../exp/mot/', opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
+    opt.load_model = os.path.join(opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
 
     result_root = opt.output_root if opt.output_root != '' else '.'
     mkdir_if_missing(result_root)

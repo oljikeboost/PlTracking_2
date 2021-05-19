@@ -1,4 +1,4 @@
-exp_id = 'custom_5vals_colors_all_30ep_data2_50ep'
+exp_id = '../exp/mot/custom_5vals_colors_all_30ep_data2_50ep'
 load_model = '../pretrained/fairmot_dla34.pth'
 num_epochs = 30
 lr_step = '15'
