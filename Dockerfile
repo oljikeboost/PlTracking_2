@@ -156,5 +156,6 @@ RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weig
 WORKDIR /home/user/Tracking
 RUN chmod +x inference.sh
 
+
 # Set the default command to python3
-CMD ["./inference.sh"]
+ENTRYPOINT ["./inference.sh"]
