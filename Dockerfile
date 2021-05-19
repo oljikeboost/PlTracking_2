@@ -123,12 +123,8 @@ RUN MMCV_WITH_OPS=1 pip install -e .
 
 
 ### Additional packages
-RUN pip install opencv-python
-RUN pip install cython-bbox
-RUN pip install sklearn
-RUN pip install numba
-RUN pip install yacs
-RUN pip install lap
+RUN pip install opencv-python && pip install cython-bbox && pip install sklearn && pip install numba && pip install yacs \
+    pip install lap
 
 ### insert some random VAR to break cahche
 ARG INCUBATOR_VER=unknown1
@@ -152,10 +148,10 @@ RUN ./make.sh
 ### Download all weights to docker internal directory
 RUN mkdir /home/user/weights
 WORKDIR /home/user/weights
-RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth
-RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth
-RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py
-RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py
+RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/epoch_90.pth && \
+    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/model-best.pth && \
+    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/yolov3_d53_320_273e_jersey_smallres.py && \
+    wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py
 
 WORKDIR /home/user/Tracking
 
