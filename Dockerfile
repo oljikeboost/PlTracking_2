@@ -123,7 +123,7 @@ RUN MMCV_WITH_OPS=1 pip install -e .
 
 
 ### Additional packages
-RUN pip install opencv-python && pip install cython-bbox && pip install sklearn && pip install numba && pip install yacs \
+RUN pip install opencv-python && pip install cython-bbox && pip install sklearn && pip install numba && pip install yacs && \
     pip install lap
 
 ### insert some random VAR to break cahche
@@ -154,6 +154,7 @@ RUN wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weig
     wget -q https://boost-operators-data.s3.us-east-2.amazonaws.com/tracker_weights/default_runtime.py
 
 WORKDIR /home/user/Tracking
+RUN chmod +x inference.sh
 
 # Set the default command to python3
-CMD ["/bin/bash"]
+CMD ["./inference.sh"]
