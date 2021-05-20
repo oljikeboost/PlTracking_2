@@ -21,9 +21,6 @@ logger.setLevel(logging.INFO)
 def demo(opt):
     opt.load_model = os.path.join(opt.exp_id, 'model_{}.pth'.format(opt.num_epochs))
 
-    result_root = opt.output_root if opt.output_root != '' else '.'
-    mkdir_if_missing(result_root)
-
     logger.info('Starting tracking...')
 
     #define if the input video is directory or file:
@@ -31,11 +28,17 @@ def demo(opt):
     all_vids = opt.input_video.split(',')
     # 2. check if it is video or directory
     if os.path.isdir(all_vids[0]):
+        result_root = os.path.join(all_vids[0], 'results')
+        mkdir_if_missing(result_root)
+
         all_files = glob.glob(all_vids[0] + '/*')
         for file in all_files:
             if os.path.isdir(file):
                 all_vids = glob.glob(file + '/*.mp4')
 
+    else:
+        result_root = opt.output_root if opt.output_root != '' else '.'
+        mkdir_if_missing(result_root)
 
     for en, input_video in enumerate(all_vids):
         input_video = input_video.strip()
