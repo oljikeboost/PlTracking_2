@@ -126,11 +126,13 @@ RUN MMCV_WITH_OPS=1 pip install -e .
 RUN pip install opencv-python && pip install cython-bbox && pip install sklearn && pip install numba && pip install yacs && \
     pip install lap
 
-### insert some random VAR to break cahche
-ARG INCUBATOR_VER=unknown3
+
 
 ### Install nano
 RUN sudo apt-get update && sudo apt-get install nano
+
+### insert some random VAR to break cahche
+ARG INCUBATOR_VER=unknown3
 
 ### Clone the Tracking Git 
 RUN git clone https://github.com/oljikeboost/Tracking.git /home/user/Tracking/
@@ -141,8 +143,8 @@ RUN python setup.py build_ext --inplace
 
 ### install DCN
 RUN git clone https://github.com/oljikeboost/DCNv2.git /home/user/Tracking/DCNv2_latest/
-WORKDIR /home/user/Tracking/DCNv2_latest
-RUN ./make.sh
+# WORKDIR /home/user/Tracking/DCNv2_latest
+# RUN ./make.sh
 
 
 ### Download all weights to docker internal directory

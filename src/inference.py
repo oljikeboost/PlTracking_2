@@ -26,13 +26,22 @@ def demo(opt):
 
     logger.info('Starting tracking...')
 
+    #define if the input video is directory or file:
+    # 1. split the opt.input_video by comma
     all_vids = opt.input_video.split(',')
-    if opt.ocr is not None:
-        all_ocr = opt.ocr.split(',')
+    # 2. check if it is video or directory
+    if os.path.isdir(all_vids[0]):
+        all_files = glob.glob(all_vids[0] + '/*')
+        for file in all_files:
+            if os.path.isdir(file):
+                all_vids = glob.glob(file + '/*.mp4')
 
 
     for en, input_video in enumerate(all_vids):
         input_video = input_video.strip()
+
+
+
         dataloader = datasets.LoadVideo(input_video, opt.img_size)
         basename = os.path.basename(input_video.replace('.mp4', ''))
         result_filename = os.path.join(result_root, basename + '.json')
@@ -48,9 +57,6 @@ def demo(opt):
         ocr_data = post_process_ocr(ocr_data)
         eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
                      frame_rate=frame_rate)
-        # eval_seq_ocr_jersey_sequent(ocr_data, opt, dataloader, result_filename, output_video=output_video_path,
-        #              frame_rate=frame_rate)
-
 
     print("Inference Finished!")
 
