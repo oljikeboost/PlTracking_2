@@ -1,3 +1,3 @@
 #!/bin/bash
 cd DCNv2_latest && ./make.sh
-cd ../src && python inference.py --config $1
+cd ../src && sudo python inference.py --config $1

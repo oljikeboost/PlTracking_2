@@ -40,8 +40,6 @@ def demo(opt):
     for en, input_video in enumerate(all_vids):
         input_video = input_video.strip()
 
-
-
         dataloader = datasets.LoadVideo(input_video, opt.img_size)
         basename = os.path.basename(input_video.replace('.mp4', ''))
         result_filename = os.path.join(result_root, basename + '.json')
@@ -49,9 +47,8 @@ def demo(opt):
 
         frame_rate = dataloader.frame_rate
 
-        if opt.ocr is not None:
-            ocr_data = open(input_video.replace('.mp4', '_ocr.json'))
-            ocr_data = json.load(ocr_data)
+        ocr_data = open(input_video.replace('.mp4', '_ocr.json'))
+        ocr_data = json.load(ocr_data)
 
         ### Post process missing intervals in ocr data
         ocr_data = post_process_ocr(ocr_data)

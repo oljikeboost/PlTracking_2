@@ -11,7 +11,7 @@ K = 10
 ### test options
 input_video = '/home/user/data/'
 output_root = '/home/user/data/docker/'
-ocr = '/home/user/data/demo_vids/'
+ocr = '/home/user/data/'
 frames_limit = 2000
 
 
