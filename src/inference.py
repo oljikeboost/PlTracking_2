@@ -28,15 +28,12 @@ def demo(opt):
     all_vids = opt.input_video.split(',')
     # 2. check if it is video or directory
     if os.path.isdir(all_vids[0]):
-
-
         all_files = glob.glob(all_vids[0] + '/*')
         for file in all_files:
             if os.path.isdir(file):
                 result_root = os.path.join(file, 'results')
                 mkdir_if_missing(result_root)
                 all_vids = glob.glob(file + '/*.mp4')
-
     else:
         result_root = opt.output_root if opt.output_root != '' else '.'
         mkdir_if_missing(result_root)
