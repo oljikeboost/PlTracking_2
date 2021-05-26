@@ -47,7 +47,7 @@ def demo(opt):
 
         dataloader = datasets.LoadVideo(input_video, opt.img_size)
         basename = os.path.basename(input_video.replace('.mp4', ''))
-        result_filename = os.path.join(result_root, basename + '.json')
+        result_filename = os.path.join(result_root, basename + '_tracking.json')
         output_video_path = osp.join(result_root, basename + '.mp4')
 
         frame_rate = dataloader.frame_rate
