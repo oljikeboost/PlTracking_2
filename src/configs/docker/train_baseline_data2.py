@@ -12,6 +12,7 @@ K = 10
 input_video = '/home/user/data/'
 output_root = '/home/user/data/'
 ocr = '/home/user/data/'
+write_video = False
 # frames_limit = 2000
 
 

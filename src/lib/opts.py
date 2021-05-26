@@ -111,6 +111,9 @@ class opts(object):
 
         self.parser.add_argument('--frames_limit', type=int, default=1e9,
                                  help='max number of output objects.')
+
+        self.parser.add_argument('--write_video', default=False,
+                                 help='max number of output objects.')
         # tracking
         self.parser.add_argument('--test_mot16', default=False, help='test mot16')
         self.parser.add_argument('--val_mot15', default=False, help='val mot15')

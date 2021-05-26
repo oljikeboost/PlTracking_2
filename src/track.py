@@ -254,7 +254,8 @@ def eval_seq_ocr_jersey(ocr_data, opt, dataloader, result_filename, output_video
     all_jerseys = post_process_cls(all_jerseys, results, True)
 
     ### Write to video
-    write_video(dataloader, results, output_video,
+    if opt.write_video:
+        write_video(dataloader, results, output_video,
                 valid_frames, all_hists, ocr_data, img0, all_jerseys, all_balls)
 
     ### Write results to a File

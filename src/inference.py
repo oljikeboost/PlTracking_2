@@ -28,11 +28,15 @@ def demo(opt):
     all_vids = opt.input_video.split(',')
     # 2. check if it is video or directory
     if os.path.isdir(all_vids[0]):
-        all_files = glob.glob(all_vids[0] + '/*')
+        main_dir = all_vids[0]
+        ### We have a dir it means we are using Docker file
+        ### The main_dir == '/home/user/data/
+        ### Now, go through each file in this directory
+        ### in Main_dir we have only folder, which is our game.
+        all_files = glob.glob(main_dir + '/*')
         for file in all_files:
             if os.path.isdir(file):
-                result_root = os.path.join(file, 'results')
-                mkdir_if_missing(result_root)
+                result_root = file
                 all_vids = glob.glob(file + '/*.mp4')
     else:
         result_root = opt.output_root if opt.output_root != '' else '.'
