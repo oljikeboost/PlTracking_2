@@ -13,7 +13,7 @@ input_video = '/home/user/data/'
 output_root = '/home/user/data/'
 ocr = '/home/user/data/'
 write_video = False
-frames_limit = 500
+# frames_limit = 500
 
 
 # input_video = '/home/user/data/demo_vids/2021_01_20_Colorado_at_Washington/2021_01_20_Colorado_at_Washington.mp4'
